@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "devCommand": "vercel dev",
+  "devCommand": "vite",
   "installCommand": "npm install",
   "env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
   "functions": {

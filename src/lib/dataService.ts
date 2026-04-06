@@ -7,7 +7,7 @@
 
 import { HealthCheck, Team, Vote } from './types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ export async function fetchAppData(): Promise<{
   teams: Team[]
   healthChecks: HealthCheck[]
 }> {
-  const response = await fetch(`${API_URL}/api/data`)
+  const response = await fetch(`${API_BASE_URL}/api/data`)
 
   if (!response.ok) {
     throw new Error(`Failed to fetch app data: ${response.statusText}`)
@@ -27,7 +27,7 @@ export async function fetchAppData(): Promise<{
 
 /** Create a new team. */
 export async function createTeam(team: Team): Promise<void> {
-  const response = await fetch(`${API_URL}/api/teams`, {
+  const response = await fetch(`${API_BASE_URL}/api/teams`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -44,7 +44,7 @@ export async function createTeam(team: Team): Promise<void> {
 
 /** Create a new health check. */
 export async function createHealthCheck(check: HealthCheck): Promise<void> {
-  const response = await fetch(`${API_URL}/api/health-checks`, {
+  const response = await fetch(`${API_BASE_URL}/api/health-checks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -67,7 +67,7 @@ export async function submitVotes(
   healthCheckId: string,
   votes: Vote[]
 ): Promise<void> {
-  const response = await fetch(`${API_URL}/api/votes`, {
+  const response = await fetch(`${API_BASE_URL}/api/votes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -83,7 +83,7 @@ export async function submitVotes(
 
 /** Close a health check. */
 export async function closeHealthCheck(checkId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/api/health-checks?id=${checkId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/health-checks?id=${checkId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
   })
@@ -95,7 +95,7 @@ export async function closeHealthCheck(checkId: string): Promise<void> {
 
 /** Delete a team (cascades to health checks and votes). */
 export async function deleteTeamWithChecks(teamId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/api/teams/${teamId}`, {
+  const response = await fetch(`${API_BASE_URL}/api/teams/${teamId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
   })
