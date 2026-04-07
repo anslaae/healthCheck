@@ -1,12 +1,6 @@
 {
   "buildCommand": "npm run build",
   "devCommand": "vite",
-  "installCommand": "npm install",
-  "env": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  }
+  "installCommand": "npm install"
 }
 

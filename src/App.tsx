@@ -46,7 +46,7 @@ function App() {
       setHealthChecks(loadedHealthChecks)
     } catch (error) {
       console.error('Failed to refresh data', error)
-      toast.error('Could not load data from Supabase')
+      toast.error('Could not load mock data')
     } finally {
       setIsLoading(false)
     }
@@ -127,7 +127,7 @@ function App() {
             <CardHeader className="text-center">
               <CardTitle>Loading health check</CardTitle>
               <CardDescription>
-                Fetching the latest data from Supabase.
+                Fetching local mock data.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -200,7 +200,7 @@ function App() {
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold">Teams</h2>
-              <p className="text-muted-foreground">Browse teams and create new ones (no auth in pass 1)</p>
+              <p className="text-muted-foreground">Browse teams and create new ones</p>
             </div>
 
             <Card>
@@ -222,7 +222,7 @@ function App() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <h3 className="text-lg font-semibold mb-2">Loading teams</h3>
-                  <p className="text-muted-foreground">Please wait while we fetch data from Supabase.</p>
+                  <p className="text-muted-foreground">Please wait while we load local mock data.</p>
                 </CardContent>
               </Card>
             ) : teams.length === 0 ? (
