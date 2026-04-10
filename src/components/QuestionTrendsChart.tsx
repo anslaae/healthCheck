@@ -55,31 +55,6 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
     })
   }
 
-  const CustomYAxisTick = ({ x, y, payload }: any) => {
-    let emoji = ''
-    if (payload.value === 100) {
-      emoji = '😊'
-    } else if (payload.value === 50) {
-      emoji = '😐'
-    } else if (payload.value === 0) {
-      emoji = '😞'
-    }
-
-    return (
-      <g transform={`translate(${x},${y})`}>
-        <text 
-          x={0} 
-          y={0} 
-          dy={4} 
-          textAnchor="end" 
-          fontSize={14}
-        >
-          {emoji}
-        </text>
-      </g>
-    )
-  }
-
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
@@ -137,6 +112,37 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
     <div className="space-y-6">
       {questionList.map((questionText, questionIndex) => {
         const questionData = questionMap.get(questionText)
+        const customYAxisTick = ({ x, y, payload }: any) => {
+          let emoji = ''
+          let explanation: string | undefined
+
+          if (payload.value === 100) {
+            emoji = '😊'
+            explanation = questionData?.happyExplanation
+          } else if (payload.value === 50) {
+            emoji = '😐'
+          } else if (payload.value === 0) {
+            emoji = '😞'
+            explanation = questionData?.unhappyExplanation
+          }
+
+          return (
+            <g transform={`translate(${x},${y})`}>
+              <text
+                x={0}
+                y={0}
+                dy={4}
+                textAnchor="end"
+                fontSize={14}
+                className={explanation ? 'cursor-help' : undefined}
+              >
+                {emoji}
+                {explanation ? <title>{explanation}</title> : null}
+              </text>
+            </g>
+          )
+        }
+
         const chartData: TrendDataPoint[] = sortedChecks.map((check, idx) => {
           const question = check.questions.find(q => q.text === questionText)
           let score = 0
@@ -199,22 +205,6 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
                   </div>
                   <div className="flex-1">
                     <CardTitle>{questionText}</CardTitle>
-                    {(questionData?.happyExplanation || questionData?.unhappyExplanation) && (
-                      <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                        {questionData.happyExplanation && (
-                          <p className="flex gap-2">
-                            <span className="shrink-0">😊</span>
-                            <span>{questionData.happyExplanation}</span>
-                          </p>
-                        )}
-                        {questionData.unhappyExplanation && (
-                          <p className="flex gap-2">
-                            <span className="shrink-0">😞</span>
-                            <span>{questionData.unhappyExplanation}</span>
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -233,7 +223,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
                     <YAxis 
                       domain={[0, 100]}
                       ticks={[0, 50, 100]}
-                      tick={<CustomYAxisTick />}
+                      tick={customYAxisTick}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Line

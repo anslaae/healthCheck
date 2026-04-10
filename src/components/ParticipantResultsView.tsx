@@ -9,7 +9,6 @@ import { getResultsWithTrends } from '@/lib/healthCheckUtils'
 import { ResultsChart } from './ResultsChart'
 import { TrendIndicator } from './TrendIndicator'
 import { motion } from 'framer-motion'
-import { toast } from 'sonner'
 
 interface ParticipantResultsViewProps {
   healthCheck: HealthCheck
@@ -155,22 +154,6 @@ export function ParticipantResultsView({
                       <div className="flex-1 space-y-3">
                         <div>
                           <h3 className="font-bold text-xl mb-2">{result.questionText}</h3>
-                          {(result.happyExplanation || result.unhappyExplanation) && (
-                            <div className="space-y-2 text-sm">
-                              {result.happyExplanation && (
-                                <div className="flex gap-2 items-start p-3 rounded-lg bg-happy/10 border border-happy/20">
-                                  <span className="flex-shrink-0 text-lg">😊</span>
-                                  <span className="text-foreground/80">{result.happyExplanation}</span>
-                                </div>
-                              )}
-                              {result.unhappyExplanation && (
-                                <div className="flex gap-2 items-start p-3 rounded-lg bg-unhappy/10 border border-unhappy/20">
-                                  <span className="flex-shrink-0 text-lg">😞</span>
-                                  <span className="text-foreground/80">{result.unhappyExplanation}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
                         {userVote && (
                           <Badge variant="secondary" className="text-sm py-1 px-3">
