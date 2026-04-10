@@ -1,4 +1,5 @@
 import { HealthCheck } from '@/lib/types'
+import { getPaddedTimeDomain } from '@/lib/chartTimeDomain'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartLine } from '@phosphor-icons/react'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
@@ -30,6 +31,8 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
   if (sortedChecks.length === 0) {
     return null
   }
+
+  const xDomain = getPaddedTimeDomain(sortedChecks.map((check) => check.createdAt))
 
   const questionMap = new Map<string, { happyExplanation?: string, unhappyExplanation?: string }>()
   sortedChecks.forEach(check => {
@@ -83,14 +86,14 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
       const dataIndex = payload[0].payload.dataIndex
       const isFirstPoint = dataIndex === 0
       
-      let previousData = null
       let percentageChange = 0
       
       if (!isFirstPoint && dataIndex > 0) {
         const chartData = payload[0].payload.chartData
-        if (chartData && chartData[dataIndex - 1]) {
-          previousData = chartData[dataIndex - 1]
-          const prevScore = previousData.score
+        const previousPoint = chartData?.[dataIndex - 1] ?? null
+
+        if (previousPoint) {
+          const prevScore = previousPoint.score
           const currScore = data.score
           if (prevScore !== 0) {
             percentageChange = ((currScore - prevScore) / 100) * 100
@@ -148,7 +151,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
             ok = votes.filter(v => v.vote === 'ok').length
             unhappy = votes.filter(v => v.vote === 'unhappy').length
             total = happy + ok + unhappy
-            score = total > 0 ? ((happy * 1 + ok * 0.5 + unhappy * 0) / total) * 100 : 0
+            score = total > 0 ? ((happy + ok * 0.5) / total) * 100 : 0
           }
 
           return {
@@ -200,13 +203,13 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
                       <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                         {questionData.happyExplanation && (
                           <p className="flex gap-2">
-                            <span className="flex-shrink-0">😊</span>
+                            <span className="shrink-0">😊</span>
                             <span>{questionData.happyExplanation}</span>
                           </p>
                         )}
                         {questionData.unhappyExplanation && (
                           <p className="flex gap-2">
-                            <span className="flex-shrink-0">😞</span>
+                            <span className="shrink-0">😞</span>
                             <span>{questionData.unhappyExplanation}</span>
                           </p>
                         )}
@@ -222,7 +225,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
                     <XAxis 
                       dataKey="date"
                       type="number"
-                      domain={['dataMin - 86400000', 'dataMax']}
+                      domain={xDomain}
                       tickFormatter={formatXAxis}
                       className="text-xs text-muted-foreground"
                       tick={{ fontSize: 12 }}

@@ -1,5 +1,6 @@
 import { HealthCheck } from '@/lib/types'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getPaddedTimeDomain } from '@/lib/chartTimeDomain'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users } from '@phosphor-icons/react'
 import { CartesianGrid, Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
@@ -34,7 +35,9 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
   if (chartData.length === 0) {
     return null
   }
-  
+
+  const xDomain = getPaddedTimeDomain(sortedChecks.map((check) => check.createdAt))
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -72,12 +75,16 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+            barCategoryGap="35%"
+          >
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis 
               dataKey="date"
               type="number"
-              domain={['dataMin - 86400000', 'dataMax']}
+              domain={xDomain}
               tickFormatter={formatXAxis}
               className="text-xs text-muted-foreground"
               tick={{ fontSize: 12 }}
@@ -90,8 +97,9 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
             <Tooltip content={<CustomTooltip />} />
             <Bar 
               dataKey="participants" 
-              fill="hsl(var(--primary))"
+              fill="var(--primary)"
               radius={[4, 4, 0, 0]}
+              maxBarSize={48}
             />
           </BarChart>
         </ResponsiveContainer>
