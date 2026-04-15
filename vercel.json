@@ -1,6 +1,8 @@
 {
   "buildCommand": "npm run build",
-  "devCommand": "vite",
-  "installCommand": "npm install"
+  "devCommand": "vite --port $PORT --strictPort",
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ]
 }
-
