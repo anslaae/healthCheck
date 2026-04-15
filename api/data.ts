@@ -4,7 +4,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { readData } from './_store'
+import { readData } from './_store.js'
 
 export default async function handler(_req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
@@ -15,4 +15,3 @@ export default async function handler(_req: VercelRequest, res: VercelResponse):
     res.status(500).json({ error: 'Failed to load data' })
   }
 }
-

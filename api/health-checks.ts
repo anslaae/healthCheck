@@ -3,8 +3,8 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { readData, writeData } from './_store'
-import type { HealthCheck } from './_store'
+import { readData, writeData } from './_store.js'
+import type { HealthCheck } from './_store.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -35,4 +35,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(500).json({ error: 'Failed to create health check' })
   }
 }
-
