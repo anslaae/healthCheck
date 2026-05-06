@@ -18,7 +18,7 @@ function App() {
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newTeamName, setNewTeamName] = useState('')
-  
+
   const urlParams = new URLSearchParams(window.location.search)
   const checkId = urlParams.get('check')
   const teamId = urlParams.get('team')

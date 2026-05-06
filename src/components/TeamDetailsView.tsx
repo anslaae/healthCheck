@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,7 +15,8 @@ import { ParticipationChart } from './ParticipationChart'
 import { QuestionTrendsChart } from './QuestionTrendsChart'
 import { motion } from 'framer-motion'
 import { generateHealthCheckId, generateQuestionId, DEFAULT_QUESTIONS } from '@/lib/healthCheckUtils'
-import { closeHealthCheck, createHealthCheck } from '@/lib/dataService'
+import { closeHealthCheck, createHealthCheck, deleteHealthCheck } from '@/lib/dataService'
+import { useLoading } from '@/components/LoadingOverlay'
 
 interface TeamDetailsViewProps {
   team: Team
@@ -27,11 +29,14 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [copiedTeamLink, setCopiedTeamLink] = useState(false)
   const [isCreatingCheck, setIsCreatingCheck] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [newCheckName, setNewCheckName] = useState('')
+  const [deletingCheckId, setDeletingCheckId] = useState<string | null>(null)
   const [checkQuestions, setCheckQuestions] = useState<Array<{text: string, happyExplanation?: string, unhappyExplanation?: string}>>(
     DEFAULT_QUESTIONS.map(q => ({ text: q.question, happyExplanation: q.happy, unhappyExplanation: q.unhappy }))
   )
-  
+  const { setLoading } = useLoading()
+
   const sortedChecks = [...healthChecks].sort((a, b) => a.createdAt - b.createdAt)
   
   const totalQuestions = healthChecks.reduce((sum, check) => sum + check.questions.length, 0)
@@ -100,6 +105,8 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
       votes: [],
     }
     
+    setIsSubmitting(true)
+    setLoading(true)
     try {
       await createHealthCheck(newCheck)
       await onRefresh()
@@ -112,6 +119,9 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
     } catch (error) {
       console.error('Failed to create health check', error)
       toast.error('Could not create health check')
+    } finally {
+      setIsSubmitting(false)
+      setLoading(false)
     }
   }
   
@@ -122,6 +132,7 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
   
   const handleCloseCheck = async (checkId: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    setLoading(true)
     try {
       await closeHealthCheck(checkId)
       toast.success('Health check closed')
@@ -129,6 +140,23 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
     } catch (error) {
       console.error('Failed to close health check', error)
       toast.error('Could not close health check')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteCheck = async (checkId: string) => {
+    setLoading(true)
+    try {
+      await deleteHealthCheck(checkId)
+      toast.success('Health check deleted')
+      setDeletingCheckId(null)
+      await handleRefresh()
+    } catch (error) {
+      console.error('Failed to delete health check', error)
+      toast.error('Could not delete health check')
+    } finally {
+      setLoading(false)
     }
   }
   
@@ -138,6 +166,7 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
   }
   
   return (
+    <>
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
@@ -340,8 +369,8 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
                       </Button>
                     </div>
                     
-                    <Button onClick={handleCreateHealthCheck} className="w-full cursor-pointer">
-                      Create Health Check
+                    <Button onClick={handleCreateHealthCheck} disabled={isSubmitting} className="w-full cursor-pointer">
+                      {isSubmitting ? 'Creating…' : 'Create Health Check'}
                     </Button>
                   </div>
                 </DialogContent>
@@ -437,6 +466,21 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
                             </TooltipTrigger>
                             <TooltipContent>View results</TooltipContent>
                           </Tooltip>
+                          {check.votes.length === 0 && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); setDeletingCheckId(check.id) }}
+                                  className="cursor-pointer text-destructive hover:text-destructive"
+                                >
+                                  <Trash size={16} weight="bold" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete health check</TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -448,5 +492,26 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
         </Card>
       </main>
     </div>
+
+    <AlertDialog open={!!deletingCheckId} onOpenChange={(open) => { if (!open) setDeletingCheckId(null) }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete health check?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This health check has no responses and will be permanently deleted. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => { if (deletingCheckId) void handleDeleteCheck(deletingCheckId) }}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
