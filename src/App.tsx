@@ -6,12 +6,13 @@ import { ParticipantResultsView } from './components/ParticipantResultsView'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
-import { Heart, UsersThree } from '@phosphor-icons/react'
+import { Heart, UsersThree, Warning } from '@phosphor-icons/react'
 import { Toaster } from './components/ui/sonner'
 import { motion } from 'framer-motion'
 import { createTeam, fetchAppData, submitVotes } from './lib/dataService'
 import { generateHealthCheckId } from './lib/healthCheckUtils'
 import { toast } from 'sonner'
+import { PageStatusCard } from './components/PageStatusCard'
 
 function App() {
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([])
@@ -77,28 +78,33 @@ function App() {
   }
   
   if (teamId) {
+    // Still loading — don't flash "not found" before data arrives
+    if (isLoading) {
+      return (
+        <>
+          <PageStatusCard
+            loading
+            title="Looking for team…"
+            description="Fetching team data, please wait."
+          />
+          <Toaster />
+        </>
+      )
+    }
+
     const team = teams.find((t) => t.id === teamId)
     
     if (!team) {
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-6">
-          <Card className="max-w-md">
-            <CardHeader className="text-center">
-              <CardTitle>Team Not Found</CardTitle>
-              <CardDescription>
-                The team you're looking for doesn't exist or has been removed.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                onClick={() => window.location.href = '/'}
-                className="w-full"
-              >
-                Go to Home
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <>
+          <PageStatusCard
+            icon={<Warning size={24} weight="bold" className="text-primary" />}
+            title="Team Not Found"
+            description="The team you're looking for doesn't exist or has been removed."
+            action={{ label: 'Go to Home', onClick: () => { window.location.href = '/' } }}
+          />
+          <Toaster />
+        </>
       )
     }
     
@@ -122,39 +128,28 @@ function App() {
 
     if (!healthCheck && isLoading) {
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-6">
-          <Card className="max-w-md">
-            <CardHeader className="text-center">
-              <CardTitle>Loading health check</CardTitle>
-              <CardDescription>
-                Fetching local mock data.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
+        <>
+          <PageStatusCard
+            loading
+            title="Loading health check…"
+            description="Fetching health check data, please wait."
+          />
+          <Toaster />
+        </>
       )
     }
     
     if (!healthCheck) {
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-6">
-          <Card className="max-w-md">
-            <CardHeader className="text-center">
-              <CardTitle>Health Check Not Found</CardTitle>
-              <CardDescription>
-                The health check you're looking for doesn't exist or has been removed.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                onClick={() => window.location.href = '/'}
-                className="w-full"
-              >
-                Go to Home
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <>
+          <PageStatusCard
+            icon={<Warning size={24} weight="bold" className="text-primary" />}
+            title="Health Check Not Found"
+            description="The health check you're looking for doesn't exist or has been removed."
+            action={{ label: 'Go to Home', onClick: () => { window.location.href = '/' } }}
+          />
+          <Toaster />
+        </>
       )
     }
     

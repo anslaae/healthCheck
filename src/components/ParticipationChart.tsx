@@ -2,11 +2,14 @@ import { HealthCheck } from '@/lib/types'
 import { getPaddedTimeDomain } from '@/lib/chartTimeDomain'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users } from '@phosphor-icons/react'
-import { CartesianGrid, Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { CartesianGrid, Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 interface ParticipationChartProps {
   healthChecks: HealthCheck[]
 }
+
+const CLOSED_COLOR = 'var(--primary)'
+const ACTIVE_COLOR = 'var(--muted-foreground)'
 
 export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
   const sortedChecks = [...healthChecks].sort((a, b) => a.createdAt - b.createdAt)
@@ -28,7 +31,8 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
         month: 'long',
         day: 'numeric'
       }),
-      participants: uniqueVoters
+      participants: uniqueVoters,
+      isActive: check.status === 'active',
     }
   })
   
@@ -40,14 +44,18 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
+      const d = payload[0].payload
       return (
         <div className="bg-card border rounded-lg shadow-lg p-3">
-          <p className="font-semibold text-sm mb-1">{payload[0].payload.name}</p>
-          <p className="text-xs text-muted-foreground mb-2">{payload[0].payload.fullDate}</p>
+          <p className="font-semibold text-sm mb-1">{d.name}</p>
+          <p className="text-xs text-muted-foreground mb-2">{d.fullDate}</p>
           <p className="text-sm">
             <span className="font-medium text-primary">{payload[0].value}</span>
             <span className="text-muted-foreground"> participant{payload[0].value !== 1 ? 's' : ''}</span>
           </p>
+          {d.isActive && (
+            <p className="text-xs text-muted-foreground mt-1 italic">In progress — not yet closed</p>
+          )}
         </div>
       )
     }
@@ -64,12 +72,22 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Users size={20} weight="bold" className="text-primary" />
-          </div>
-          <div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users size={20} weight="bold" className="text-primary" />
+            </div>
             <CardTitle>Participation Over Time</CardTitle>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-sm bg-primary" />
+              Closed
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-sm bg-muted-foreground opacity-50" />
+              In progress
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -95,12 +113,19 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
               allowDecimals={false}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar 
-              dataKey="participants" 
-              fill="var(--primary)"
+            <Bar
+              dataKey="participants"
               radius={[4, 4, 0, 0]}
               maxBarSize={48}
-            />
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.isActive ? ACTIVE_COLOR : CLOSED_COLOR}
+                  fillOpacity={entry.isActive ? 0.45 : 1}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

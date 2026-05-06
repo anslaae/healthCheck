@@ -1,6 +1,6 @@
 import { HealthCheck } from '@/lib/types'
 import { getPaddedTimeDomain } from '@/lib/chartTimeDomain'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ChartLine } from '@phosphor-icons/react'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
@@ -26,10 +26,27 @@ interface TrendDataPoint {
 const LINE_COLOR = 'oklch(0.646 0.222 41.116)'
 
 export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) {
-  const sortedChecks = [...healthChecks].sort((a, b) => a.createdAt - b.createdAt)
+  // Only include closed checks so in-progress results don't skew the trends
+  const sortedChecks = [...healthChecks]
+    .filter((c) => c.status === 'closed')
+    .sort((a, b) => a.createdAt - b.createdAt)
 
   if (sortedChecks.length === 0) {
-    return null
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <ChartLine size={20} weight="bold" className="text-primary" />
+            </div>
+            <div>
+              <CardTitle>Question Trends</CardTitle>
+              <CardDescription>Close a health check to start seeing trend data</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    )
   }
 
   const xDomain = getPaddedTimeDomain(sortedChecks.map((check) => check.createdAt))

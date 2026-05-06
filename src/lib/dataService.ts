@@ -61,6 +61,14 @@ export async function closeHealthCheck(checkId: string): Promise<void> {
   })
 }
 
+/** Delete a health check (only allowed when it has no votes). */
+export async function deleteHealthCheck(checkId: string): Promise<void> {
+  await apiFetch('/api/health-checks', {
+    method: 'DELETE',
+    body: JSON.stringify({ checkId }),
+  })
+}
+
 /** Delete a team (cascades to health checks and votes). */
 export async function deleteTeamWithChecks(teamId: string): Promise<void> {
   await apiFetch('/api/teams', {
