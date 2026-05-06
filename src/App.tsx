@@ -13,12 +13,14 @@ import { createTeam, fetchAppData, submitVotes } from './lib/dataService'
 import { generateHealthCheckId } from './lib/healthCheckUtils'
 import { toast } from 'sonner'
 import { PageStatusCard } from './components/PageStatusCard'
+import { useAsyncAction } from './hooks/useAsyncAction'
 
 function App() {
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newTeamName, setNewTeamName] = useState('')
+  const { isRunning: isCreatingTeam, run: runCreateTeam } = useAsyncAction()
 
   const urlParams = new URLSearchParams(window.location.search)
   const checkId = urlParams.get('check')
@@ -66,15 +68,17 @@ function App() {
       createdAt: Date.now(),
     }
 
-    try {
-      await createTeam(newTeam)
-      setNewTeamName('')
-      await handleRefresh()
-      toast.success(`Team "${name}" created`)
-    } catch (error) {
-      console.error('Failed to create team', error)
-      toast.error('Could not create team')
-    }
+    await runCreateTeam(async () => {
+      try {
+        await createTeam(newTeam)
+        setNewTeamName('')
+        await handleRefresh()
+        toast.success(`Team "${name}" created`)
+      } catch (error) {
+        console.error('Failed to create team', error)
+        toast.error('Could not create team')
+      }
+    })
   }
   
   if (teamId) {
@@ -205,9 +209,10 @@ function App() {
                     value={newTeamName}
                     onChange={(event) => setNewTeamName(event.target.value)}
                     placeholder="New team name"
+                    disabled={isCreatingTeam}
                   />
-                  <Button onClick={handleCreateTeam} disabled={!newTeamName.trim()}>
-                    Create Team
+                  <Button onClick={handleCreateTeam} disabled={!newTeamName.trim() || isCreatingTeam}>
+                    {isCreatingTeam ? 'Creating…' : 'Create Team'}
                   </Button>
                 </div>
               </CardContent>

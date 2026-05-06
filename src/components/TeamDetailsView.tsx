@@ -15,7 +15,7 @@ import { ParticipationChart } from './ParticipationChart'
 import { QuestionTrendsChart } from './QuestionTrendsChart'
 import { motion } from 'framer-motion'
 import { generateHealthCheckId, generateQuestionId, DEFAULT_QUESTIONS } from '@/lib/healthCheckUtils'
-import { closeHealthCheck, createHealthCheck, deleteHealthCheck } from '@/lib/dataService'
+import { closeHealthCheck, createHealthCheck, deleteHealthCheck, deleteTeam } from '@/lib/dataService'
 import { useLoading } from '@/components/LoadingOverlay'
 
 interface TeamDetailsViewProps {
@@ -30,8 +30,12 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
   const [copiedTeamLink, setCopiedTeamLink] = useState(false)
   const [isCreatingCheck, setIsCreatingCheck] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [closingCheckId, setClosingCheckId] = useState<string | null>(null)
+  const [isDeletingTeam, setIsDeletingTeam] = useState(false)
+  const [isDeletingCheck, setIsDeletingCheck] = useState(false)
   const [newCheckName, setNewCheckName] = useState('')
   const [deletingCheckId, setDeletingCheckId] = useState<string | null>(null)
+  const [isDeleteTeamDialogOpen, setIsDeleteTeamDialogOpen] = useState(false)
   const [checkQuestions, setCheckQuestions] = useState<Array<{text: string, happyExplanation?: string, unhappyExplanation?: string}>>(
     DEFAULT_QUESTIONS.map(q => ({ text: q.question, happyExplanation: q.happy, unhappyExplanation: q.unhappy }))
   )
@@ -112,10 +116,7 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
       await onRefresh()
 
       toast.success(`Health check "${newCheck.name}" created`)
-
-      setNewCheckName('')
-      setCheckQuestions(DEFAULT_QUESTIONS.map(q => ({ text: q.question, happyExplanation: q.happy, unhappyExplanation: q.unhappy })))
-      setIsCreatingCheck(false)
+      window.location.href = `${window.location.origin}?check=${newCheck.id}`
     } catch (error) {
       console.error('Failed to create health check', error)
       toast.error('Could not create health check')
@@ -132,6 +133,12 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
   
   const handleCloseCheck = async (checkId: string, e: React.MouseEvent) => {
     e.stopPropagation()
+
+    if (closingCheckId) {
+      return
+    }
+
+    setClosingCheckId(checkId)
     setLoading(true)
     try {
       await closeHealthCheck(checkId)
@@ -141,11 +148,17 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
       console.error('Failed to close health check', error)
       toast.error('Could not close health check')
     } finally {
+      setClosingCheckId(null)
       setLoading(false)
     }
   }
 
   const handleDeleteCheck = async (checkId: string) => {
+    if (isDeletingCheck) {
+      return
+    }
+
+    setIsDeletingCheck(true)
     setLoading(true)
     try {
       await deleteHealthCheck(checkId)
@@ -156,10 +169,28 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
       console.error('Failed to delete health check', error)
       toast.error('Could not delete health check')
     } finally {
+      setIsDeletingCheck(false)
       setLoading(false)
     }
   }
-  
+
+  const handleDeleteTeam = async () => {
+    setIsDeletingTeam(true)
+    setLoading(true)
+    try {
+      await deleteTeam(team.id)
+      toast.success('Team deleted')
+      setIsDeleteTeamDialogOpen(false)
+      window.location.href = `${window.location.origin}/`
+    } catch (error) {
+      console.error('Failed to delete team', error)
+      toast.error('Could not delete team')
+    } finally {
+      setIsDeletingTeam(false)
+      setLoading(false)
+    }
+  }
+
   const handleViewCheck = (checkId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     window.location.href = `${window.location.origin}?check=${checkId}&results=true`
@@ -225,6 +256,23 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
             </TooltipTrigger>
             <TooltipContent>Refresh data</TooltipContent>
           </Tooltip>
+          {healthChecks.length === 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsDeleteTeamDialogOpen(true)}
+                  disabled={isDeletingTeam}
+                  className="cursor-pointer text-destructive hover:text-destructive"
+                >
+                  <Trash size={16} weight="bold" className="mr-2" />
+                  Delete Team
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Delete this team</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </header>
       
@@ -274,7 +322,7 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DialogTrigger asChild>
-                      <Button className="cursor-pointer">
+                      <Button className="cursor-pointer" disabled={isSubmitting}>
                         <Plus weight="bold" className="mr-2" />
                         New Check
                       </Button>
@@ -385,9 +433,18 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
                 <p className="text-muted-foreground mb-4">
                   Create a health check for this team to start tracking trends
                 </p>
-                <Button onClick={() => setIsCreatingCheck(true)} className="cursor-pointer">
+                <Button onClick={() => setIsCreatingCheck(true)} disabled={isSubmitting} className="cursor-pointer">
                   <Plus weight="bold" className="mr-2" />
                   Create Health Check
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteTeamDialogOpen(true)}
+                  disabled={isDeletingTeam}
+                  className="ml-3 cursor-pointer text-destructive hover:text-destructive"
+                >
+                  <Trash weight="bold" className="mr-2" />
+                  Delete Team
                 </Button>
               </div>
             ) : (
@@ -445,12 +502,19 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
                                   variant="outline"
                                   size="sm"
                                   onClick={(e) => handleCloseCheck(check.id, e)}
+                                  disabled={!!closingCheckId}
                                   className="cursor-pointer"
                                 >
-                                  <LockSimple size={16} weight="bold" />
+                                  {closingCheckId === check.id ? (
+                                    <ArrowsClockwise size={16} weight="bold" className="animate-spin" />
+                                  ) : (
+                                    <LockSimple size={16} weight="bold" />
+                                  )}
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Close health check</TooltipContent>
+                              <TooltipContent>
+                                {closingCheckId === check.id ? 'Closing health check…' : 'Close health check'}
+                              </TooltipContent>
                             </Tooltip>
                           )}
                           <Tooltip>
@@ -473,6 +537,7 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
                                   variant="outline"
                                   size="sm"
                                   onClick={(e) => { e.stopPropagation(); setDeletingCheckId(check.id) }}
+                                  disabled={isDeletingCheck}
                                   className="cursor-pointer text-destructive hover:text-destructive"
                                 >
                                   <Trash size={16} weight="bold" />
@@ -493,7 +558,14 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
       </main>
     </div>
 
-    <AlertDialog open={!!deletingCheckId} onOpenChange={(open) => { if (!open) setDeletingCheckId(null) }}>
+    <AlertDialog
+      open={!!deletingCheckId}
+      onOpenChange={(open) => {
+        if (!open && !isDeletingCheck) {
+          setDeletingCheckId(null)
+        }
+      }}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete health check?</AlertDialogTitle>
@@ -502,12 +574,41 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeletingCheck}>Cancel</AlertDialogCancel>
           <AlertDialogAction
+            disabled={isDeletingCheck}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={() => { if (deletingCheckId) void handleDeleteCheck(deletingCheckId) }}
           >
-            Delete
+            {isDeletingCheck ? 'Deleting…' : 'Delete'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog
+      open={isDeleteTeamDialogOpen}
+      onOpenChange={(open) => {
+        if (!isDeletingTeam) {
+          setIsDeleteTeamDialogOpen(open)
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete team?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This team has no health checks and will be permanently deleted. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeletingTeam}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={isDeletingTeam}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => { void handleDeleteTeam() }}
+          >
+            {isDeletingTeam ? 'Deleting…' : 'Delete Team'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

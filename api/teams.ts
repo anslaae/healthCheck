@@ -1,6 +1,6 @@
 /**
  * POST /api/teams        – create a team
- * DELETE /api/teams      – delete a team and all its health checks (body: { teamId })
+ * DELETE /api/teams      – delete a team with no health checks (body: { teamId })
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
@@ -42,8 +42,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     try {
       const data = await readData()
+
+      if (!data.teams.some((t) => t.id === teamId)) {
+        res.status(404).json({ error: 'Team not found' })
+        return
+      }
+
+      if (data.healthChecks.some((c) => c.teamId === teamId)) {
+        res.status(400).json({ error: 'Cannot delete a team that still has health checks' })
+        return
+      }
+
       data.teams = data.teams.filter((t) => t.id !== teamId)
-      data.healthChecks = data.healthChecks.filter((c) => c.teamId !== teamId)
       await writeData(data)
       res.status(200).json({ success: true })
     } catch (error) {

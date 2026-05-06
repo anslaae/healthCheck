@@ -7,11 +7,12 @@ import { ParticipantResultsView } from './ParticipantResultsView'
 import { Heart, PaperPlaneRight } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { useAsyncAction } from '@/hooks/useAsyncAction'
 
 interface VotingViewProps {
   healthCheck: HealthCheck
   allHealthChecks: HealthCheck[]
-  onVoteSubmit: (votes: Vote[]) => void
+  onVoteSubmit: (votes: Vote[]) => Promise<void>
   onRefresh: () => void
 }
 
@@ -19,7 +20,8 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
   const [votes, setVotes] = useState<Record<string, VoteType>>({})
   const [submitted, setSubmitted] = useState(false)
   const [submittedVotes, setSubmittedVotes] = useState<Record<string, VoteType>>({})
-  
+  const { isRunning: isSubmitting, run: runSubmit } = useAsyncAction()
+
   const handleVote = (questionId: string, voteType: VoteType) => {
     setVotes((prev) => ({
       ...prev,
@@ -28,16 +30,9 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
   }
   
   const handleSubmit = async () => {
-    console.log('=== VOTE SUBMISSION STARTED ===')
-    console.log('Current votes state:', votes)
-    console.log('Health check ID:', healthCheck.id)
-    console.log('Health check questions:', healthCheck.questions.length)
-    
     const allQuestionsAnswered = healthCheck.questions.every(
       (q) => votes[q.id] !== undefined
     )
-    
-    console.log('All questions answered?', allQuestionsAnswered)
     
     if (!allQuestionsAnswered) {
       toast.error('Please answer all questions before submitting')
@@ -50,29 +45,23 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
       timestamp: Date.now(),
     }))
     
-    console.log('Vote array to submit:', voteArray)
-    
     setSubmittedVotes(votes)
-    
-    console.log('Calling onVoteSubmit...')
-    await onVoteSubmit(voteArray)
-    console.log('onVoteSubmit completed')
-    
-    console.log('Waiting 300ms...')
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
-    console.log('Calling onRefresh...')
-    await onRefresh()
-    console.log('onRefresh completed')
-    
-    console.log('Setting submitted to true')
-    setSubmitted(true)
-    
-    toast.success('Thank you for your feedback!', {
-      description: 'Your anonymous response has been recorded.',
+
+    await runSubmit(async () => {
+      try {
+        await onVoteSubmit(voteArray)
+        await new Promise(resolve => setTimeout(resolve, 300))
+        await onRefresh()
+        setSubmitted(true)
+
+        toast.success('Thank you for your feedback!', {
+          description: 'Your anonymous response has been recorded.',
+        })
+      } catch (error) {
+        console.error('Failed to submit feedback', error)
+        toast.error('Could not submit feedback. Please try again.')
+      }
     })
-    
-    console.log('=== VOTE SUBMISSION COMPLETED ===')
   }
   
   if (submitted) {
@@ -139,7 +128,7 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
                 <Card className="shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-start gap-3">
-                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+                      <span className="shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
                         {index + 1}
                       </span>
                       <span className="flex-1">{question.text}</span>
@@ -167,16 +156,19 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
                         voteType="happy"
                         selected={votes[question.id] === 'happy'}
                         onClick={() => handleVote(question.id, 'happy')}
+                        disabled={isSubmitting}
                       />
                       <VoteButton
                         voteType="ok"
                         selected={votes[question.id] === 'ok'}
                         onClick={() => handleVote(question.id, 'ok')}
+                        disabled={isSubmitting}
                       />
                       <VoteButton
                         voteType="unhappy"
                         selected={votes[question.id] === 'unhappy'}
                         onClick={() => handleVote(question.id, 'unhappy')}
+                        disabled={isSubmitting}
                       />
                     </div>
                   </CardContent>
@@ -191,10 +183,10 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
             onClick={handleSubmit}
             size="lg"
             className="w-full md:w-auto md:min-w-64 mx-auto flex shadow-lg text-lg h-14 cursor-pointer"
-            disabled={Object.keys(votes).length !== healthCheck.questions.length}
+            disabled={Object.keys(votes).length !== healthCheck.questions.length || isSubmitting}
           >
             <PaperPlaneRight size={20} weight="bold" className="mr-2" />
-            Submit Feedback
+            {isSubmitting ? 'Submitting…' : 'Submit Feedback'}
           </Button>
         </div>
       </div>
