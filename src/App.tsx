@@ -39,6 +39,10 @@ function App() {
 
     await submitVotes(checkId, votes)
   }
+
+  const handleBackToTeamFromCheck = (teamIdToOpen: string) => {
+    window.location.href = `${window.location.origin}?team=${teamIdToOpen}`
+  }
   
   const handleRefresh = async () => {
     setIsLoading(true)
@@ -52,6 +56,16 @@ function App() {
       toast.error('Could not load mock data')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleBackgroundRefresh = async () => {
+    try {
+      const { teams: loadedTeams, healthChecks: loadedHealthChecks } = await fetchAppData()
+      setTeams(loadedTeams)
+      setHealthChecks(loadedHealthChecks)
+    } catch (error) {
+      console.error('Failed to refresh data in background', error)
     }
   }
 
@@ -159,19 +173,22 @@ function App() {
     
     const teamHealthChecks = healthChecks.filter(c => c.teamId === healthCheck.teamId)
     
-    if (healthCheck.status === 'closed' || forceResults) {
-      return (
-        <>
-          <ParticipantResultsView
-            healthCheck={healthCheck}
-            allHealthChecks={teamHealthChecks}
-            onRefresh={handleRefresh}
-          />
-          <Toaster />
-        </>
-      )
-    }
-    
+     if (healthCheck.status === 'closed' || forceResults) {
+       return (
+         <>
+           <ParticipantResultsView
+             healthCheck={healthCheck}
+             allHealthChecks={teamHealthChecks}
+             onRefresh={handleRefresh}
+             onBackgroundRefresh={handleBackgroundRefresh}
+             onBackToTeam={() => handleBackToTeamFromCheck(healthCheck.teamId)}
+             onGoToVoting={() => window.location.href = `${window.location.origin}?check=${healthCheck.id}`}
+           />
+           <Toaster />
+         </>
+       )
+     }
+
     return (
       <>
         <VotingView 
@@ -179,6 +196,8 @@ function App() {
           allHealthChecks={teamHealthChecks}
           onVoteSubmit={handleVoteSubmit}
           onRefresh={handleRefresh}
+          onBackgroundRefresh={handleBackgroundRefresh}
+          onBackToTeam={() => handleBackToTeamFromCheck(healthCheck.teamId)}
         />
         <Toaster />
       </>

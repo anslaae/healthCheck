@@ -4,7 +4,8 @@ import { VoteButton } from './VoteButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ParticipantResultsView } from './ParticipantResultsView'
-import { Heart, PaperPlaneRight } from '@phosphor-icons/react'
+import { ArrowLeft, Heart, PaperPlaneRight } from '@phosphor-icons/react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useAsyncAction } from '@/hooks/useAsyncAction'
@@ -14,9 +15,18 @@ interface VotingViewProps {
   allHealthChecks: HealthCheck[]
   onVoteSubmit: (votes: Vote[]) => Promise<void>
   onRefresh: () => void
+  onBackgroundRefresh?: () => Promise<void>
+  onBackToTeam: () => void
 }
 
-export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefresh }: VotingViewProps) {
+export function VotingView({
+  healthCheck,
+  allHealthChecks,
+  onVoteSubmit,
+  onRefresh,
+  onBackgroundRefresh,
+  onBackToTeam,
+}: VotingViewProps) {
   const [votes, setVotes] = useState<Record<string, VoteType>>({})
   const [submitted, setSubmitted] = useState(false)
   const [submittedVotes, setSubmittedVotes] = useState<Record<string, VoteType>>({})
@@ -64,21 +74,23 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
     })
   }
   
-  if (submitted) {
-    return (
-      <ParticipantResultsView 
-        healthCheck={healthCheck}
-        allHealthChecks={allHealthChecks}
-        onRefresh={onRefresh}
-        userVotes={submittedVotes}
-      />
-    )
-  }
-  
-  const progress = (Object.keys(votes).length / healthCheck.questions.length) * 100
-  
-  return (
-    <div className="min-h-screen bg-background">
+   if (submitted) {
+     return (
+       <ParticipantResultsView
+         healthCheck={healthCheck}
+         allHealthChecks={allHealthChecks}
+         onRefresh={onRefresh}
+         onBackgroundRefresh={onBackgroundRefresh}
+         onBackToTeam={onBackToTeam}
+         userVotes={submittedVotes}
+       />
+     )
+   }
+
+   const progress = (Object.keys(votes).length / healthCheck.questions.length) * 100
+
+   return (
+     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-6 md:p-8 space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -102,6 +114,18 @@ export function VotingView({ healthCheck, allHealthChecks, onVoteSubmit, onRefre
             </CardContent>
           </Card>
         </motion.div>
+
+        <div className="flex justify-start">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer">
+                <ArrowLeft weight="bold" className="mr-2" />
+                Back to Team Overview
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Return to team overview</TooltipContent>
+          </Tooltip>
+        </div>
         
         <div className="bg-secondary rounded-full h-2 overflow-hidden">
           <motion.div

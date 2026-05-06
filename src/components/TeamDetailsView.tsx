@@ -205,7 +205,7 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
             <TooltipTrigger asChild>
               <Button variant="ghost" size="sm" onClick={onBack} className="cursor-pointer">
                 <ArrowLeft weight="bold" className="mr-2" />
-                Back
+                Back to Teams
               </Button>
             </TooltipTrigger>
             <TooltipContent>Return to teams list</TooltipContent>
