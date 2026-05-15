@@ -1,5 +1,24 @@
 export type VoteType = 'happy' | 'ok' | 'unhappy'
 
+export type AuthProvider = 'github'
+
+export interface AuthUser {
+  id: string
+  login: string
+  name: string
+  avatarUrl?: string
+  email?: string
+}
+
+export type AuthSessionResponse =
+  | { authenticated: false }
+  | {
+      authenticated: true
+      provider: AuthProvider
+      user: AuthUser
+      expiresAt: number
+    }
+
 export interface Question {
   id: string
   text: string

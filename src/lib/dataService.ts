@@ -10,6 +10,7 @@ import { HealthCheck, Team, Vote } from './types'
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     ...init,
   })
 

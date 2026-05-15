@@ -28,6 +28,17 @@ function App() {
   const forceResults = urlParams.get('results') === 'true'
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const authError = params.get('authError')
+
+    if (authError) {
+      toast.error('Could not complete sign-in. Please try again.')
+      params.delete('authError')
+      const cleaned = params.toString()
+      const nextUrl = cleaned ? `${window.location.pathname}?${cleaned}` : window.location.pathname
+      window.history.replaceState({}, '', nextUrl)
+    }
+
     void handleRefresh()
   }, [])
   
