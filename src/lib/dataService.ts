@@ -38,6 +38,30 @@ export async function createTeam(team: Team): Promise<void> {
   })
 }
 
+/** Set team visibility to public/private. */
+export async function updateTeamVisibility(teamId: string, visibility: 'public' | 'private'): Promise<void> {
+  await apiFetch('/api/teams', {
+    method: 'PATCH',
+    body: JSON.stringify({ teamId, visibility }),
+  })
+}
+
+/** Create a shareable invite link for a private team. */
+export async function createPrivateTeamInvite(teamId: string): Promise<{ inviteUrl: string }> {
+  return apiFetch('/api/team-members', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'createInvite', teamId }),
+  })
+}
+
+/** Join a private team using an invite code. */
+export async function joinPrivateTeamByInvite(inviteCode: string): Promise<{ teamId: string; teamName: string }> {
+  return apiFetch('/api/team-members', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'joinByInvite', inviteCode }),
+  })
+}
+
 /** Create a new health check. */
 export async function createHealthCheck(check: HealthCheck): Promise<void> {
   await apiFetch('/api/health-checks', {

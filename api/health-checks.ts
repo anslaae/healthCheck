@@ -4,6 +4,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { canManagePrivateTeam, getAuthSession } from './_authz.js'
 import { readData, writeData } from './_store.js'
 import type { HealthCheck } from './_store.js'
 
@@ -17,10 +18,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     try {
+      const session = await getAuthSession(req)
       const data = await readData()
+      const team = data.teams.find((t) => t.id === check.teamId)
 
-      if (!data.teams.some((t) => t.id === check.teamId)) {
+      if (!team) {
         res.status(404).json({ error: 'Team not found' })
+        return
+      }
+
+      if (!canManagePrivateTeam(team, session)) {
+        res.status(403).json({ error: 'Only private team members can create health checks' })
         return
       }
 
@@ -43,11 +51,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     try {
+      const session = await getAuthSession(req)
       const data = await readData()
       const check = data.healthChecks.find((c) => c.id === checkId)
 
       if (!check) {
         res.status(404).json({ error: 'Health check not found' })
+        return
+      }
+
+      const team = data.teams.find((t) => t.id === check.teamId)
+      if (!team) {
+        res.status(404).json({ error: 'Team not found' })
+        return
+      }
+
+      if (!canManagePrivateTeam(team, session)) {
+        res.status(403).json({ error: 'Only private team members can delete health checks' })
         return
       }
 

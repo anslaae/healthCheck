@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Team, HealthCheck, Question } from '@/lib/types'
+import { AuthSessionResponse, Team, HealthCheck, Question } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,25 +9,28 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ArrowLeft, CalendarBlank, ArrowsClockwise, ShareNetwork, Plus, Check, Trash, Eye, LockSimple, ChatCircleDots } from '@phosphor-icons/react'
+import { ArrowLeft, CalendarBlank, ArrowsClockwise, ShareNetwork, Plus, Check, Trash, Eye, LockSimple, ChatCircleDots, LinkSimple } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { ParticipationChart } from './ParticipationChart'
 import { QuestionTrendsChart } from './QuestionTrendsChart'
 import { motion } from 'framer-motion'
 import { generateHealthCheckId, generateQuestionId, DEFAULT_QUESTIONS } from '@/lib/healthCheckUtils'
-import { closeHealthCheck, createHealthCheck, deleteHealthCheck, deleteTeam } from '@/lib/dataService'
+import { closeHealthCheck, createHealthCheck, createPrivateTeamInvite, deleteHealthCheck, deleteTeam, updateTeamVisibility } from '@/lib/dataService'
 import { useLoading } from '@/components/LoadingOverlay'
 
 interface TeamDetailsViewProps {
   team: Team
   healthChecks: HealthCheck[]
+  session: AuthSessionResponse
   onBack: () => void
   onRefresh: () => void
 }
 
-export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamDetailsViewProps) {
+export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh }: TeamDetailsViewProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [copiedTeamLink, setCopiedTeamLink] = useState(false)
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false)
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false)
   const [isCreatingCheck, setIsCreatingCheck] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [closingCheckId, setClosingCheckId] = useState<string | null>(null)
@@ -40,6 +43,7 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
     DEFAULT_QUESTIONS.map(q => ({ text: q.question, happyExplanation: q.happy, unhappyExplanation: q.unhappy }))
   )
   const { setLoading } = useLoading()
+  const isMember = session.authenticated && team.members.some((member) => member.userId === session.user.id)
 
   const sortedChecks = [...healthChecks].sort((a, b) => a.createdAt - b.createdAt)
   
@@ -64,7 +68,47 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
     setTimeout(() => setCopiedTeamLink(false), 2000)
     toast.success('Team link copied to clipboard')
   }
-  
+
+  const handleCopyInviteLink = async () => {
+    if (!session.authenticated || !isMember) {
+      toast.error('Only private team members can share invite links')
+      return
+    }
+
+    setIsGeneratingInvite(true)
+    try {
+      const { inviteUrl } = await createPrivateTeamInvite(team.id)
+      await navigator.clipboard.writeText(inviteUrl)
+      setCopiedTeamLink(true)
+      setTimeout(() => setCopiedTeamLink(false), 2000)
+      toast.success('Invite link copied to clipboard')
+    } catch (error) {
+      console.error('Failed to create invite link', error)
+      toast.error('Could not create invite link')
+    } finally {
+      setIsGeneratingInvite(false)
+    }
+  }
+
+  const handleMakePrivate = async () => {
+    if (!session.authenticated) {
+      toast.error('Please sign in to make teams private')
+      return
+    }
+
+    setIsUpdatingVisibility(true)
+    try {
+      await updateTeamVisibility(team.id, 'private')
+      toast.success('Team is now private. You were added as a member.')
+      await onRefresh()
+    } catch (error) {
+      console.error('Failed to update team visibility', error)
+      toast.error('Could not make team private')
+    } finally {
+      setIsUpdatingVisibility(false)
+    }
+  }
+
   const handleCreateHealthCheck = async () => {
     if (!newCheckName.trim()) {
       toast.error('Please enter a health check name')
@@ -212,14 +256,36 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
           </Tooltip>
           <div className="flex-1">
             <h1 className="text-xl font-bold">{team.name}</h1>
-            <p className="text-sm text-muted-foreground">Team Overview & Trends</p>
+            <p className="text-sm text-muted-foreground">
+              Team Overview & Trends • {team.visibility === 'private' ? 'Private' : 'Public'}
+            </p>
           </div>
+          {team.visibility === 'public' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { void handleMakePrivate() }}
+                  disabled={!session.authenticated || isUpdatingVisibility}
+                  className="cursor-pointer"
+                >
+                  <LockSimple size={16} weight="bold" className="mr-2" />
+                  {isUpdatingVisibility ? 'Updating…' : 'Make Private'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {session.authenticated ? 'Only members can view private teams' : 'Sign in to make a team private'}
+              </TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={handleCopyTeamLink}
+                onClick={team.visibility === 'private' ? () => { void handleCopyInviteLink() } : handleCopyTeamLink}
+                disabled={team.visibility === 'private' && (!isMember || isGeneratingInvite)}
                 className="cursor-pointer"
               >
                 {copiedTeamLink ? (
@@ -229,13 +295,19 @@ export function TeamDetailsView({ team, healthChecks, onBack, onRefresh }: TeamD
                   </>
                 ) : (
                   <>
-                    <ShareNetwork size={16} weight="bold" className="mr-2" />
-                    Share
+                    {team.visibility === 'private' ? <LinkSimple size={16} weight="bold" className="mr-2" /> : <ShareNetwork size={16} weight="bold" className="mr-2" />}
+                    {team.visibility === 'private' ? 'Invite Link' : 'Share'}
                   </>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Copy public team page link</TooltipContent>
+            <TooltipContent>
+              {team.visibility === 'private'
+                ? isMember
+                  ? 'Copy invite link for private team members'
+                  : 'Only private team members can create invite links'
+                : 'Copy public team page link'}
+            </TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>

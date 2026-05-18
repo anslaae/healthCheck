@@ -41,6 +41,16 @@ export interface Team {
   id: string
   name: string
   createdAt: number
+  visibility: 'public' | 'private'
+  members: TeamMember[]
+  inviteCode?: string
+}
+
+export interface TeamMember {
+  userId: string
+  login: string
+  name: string
+  joinedAt: number
 }
 
 export type AppData = {
@@ -268,10 +278,10 @@ function buildSeedData(): AppData {
   const piQuestions = createPiQuestions()
 
   const teams: Team[] = [
-    { id: 'team-platform', name: 'Platform Team', createdAt: now - 1000 * 60 * 60 * 24 * 40 },
-    { id: 'team-product', name: 'Product Team', createdAt: now - 1000 * 60 * 60 * 24 * 32 },
-    { id: 'team-growth', name: 'Growth Team', createdAt: now - 1000 * 60 * 60 * 24 * 20 },
-    { id: PI_TEAM_ID, name: 'PI', createdAt: 1774894800000 },
+    { id: 'team-platform', name: 'Platform Team', createdAt: now - 1000 * 60 * 60 * 24 * 40, visibility: 'public', members: [] },
+    { id: 'team-product', name: 'Product Team', createdAt: now - 1000 * 60 * 60 * 24 * 32, visibility: 'public', members: [] },
+    { id: 'team-growth', name: 'Growth Team', createdAt: now - 1000 * 60 * 60 * 24 * 20, visibility: 'public', members: [] },
+    { id: PI_TEAM_ID, name: 'PI', createdAt: 1774894800000, visibility: 'public', members: [] },
   ]
 
   const checks: HealthCheck[] = []
@@ -323,7 +333,7 @@ function buildSeedData(): AppData {
 }
 
 function mergeSeedData(existing: AppData, seeded: AppData): AppData {
-  const teams = [...existing.teams]
+  const teams = existing.teams.map(normalizeTeam)
   const healthChecks = [...existing.healthChecks]
 
   for (const team of seeded.teams) {
@@ -345,6 +355,27 @@ function mergeSeedData(existing: AppData, seeded: AppData): AppData {
   }
 
   return { teams, healthChecks }
+}
+
+function normalizeTeam(team: Team): Team {
+  const visibility = team.visibility === 'private' ? 'private' : 'public'
+  const inviteCode = typeof team.inviteCode === 'string' && team.inviteCode.trim() ? team.inviteCode : undefined
+
+  return {
+    ...team,
+    visibility,
+    members: Array.isArray(team.members)
+      ? team.members
+          .filter((member) => member && typeof member.userId === 'string' && typeof member.login === 'string')
+          .map((member) => ({
+            userId: member.userId,
+            login: member.login,
+            name: typeof member.name === 'string' && member.name.trim() ? member.name : member.login,
+            joinedAt: typeof member.joinedAt === 'number' ? member.joinedAt : Date.now(),
+          }))
+      : [],
+    inviteCode: visibility === 'private' ? inviteCode : undefined,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -371,21 +402,27 @@ export async function readData(): Promise<AppData> {
     return seeded
   }
 
+  const normalizedExisting: AppData = {
+    teams: existing.teams.map(normalizeTeam),
+    healthChecks: existing.healthChecks,
+  }
+
   const seeded = buildSeedData()
-  const merged = mergeSeedData(existing, seeded)
+  const merged = mergeSeedData(normalizedExisting, seeded)
 
   const needsUpdate =
-    merged.teams.length !== existing.teams.length ||
-    merged.healthChecks.length !== existing.healthChecks.length ||
+    JSON.stringify(normalizedExisting.teams) !== JSON.stringify(existing.teams) ||
+    merged.teams.length !== normalizedExisting.teams.length ||
+    merged.healthChecks.length !== normalizedExisting.healthChecks.length ||
     JSON.stringify(merged.healthChecks.find((c) => c.id === PI_CHECK_ID)) !==
-      JSON.stringify(existing.healthChecks.find((c) => c.id === PI_CHECK_ID))
+      JSON.stringify(normalizedExisting.healthChecks.find((c) => c.id === PI_CHECK_ID))
 
   if (needsUpdate) {
     await writeData(merged)
     return merged
   }
 
-  return existing
+  return normalizedExisting
 }
 
 export async function writeData(data: AppData): Promise<void> {

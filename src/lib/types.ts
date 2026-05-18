@@ -47,6 +47,16 @@ export interface Team {
   id: string
   name: string
   createdAt: number
+  visibility: 'public' | 'private'
+  members: TeamMember[]
+  inviteCode?: string
+}
+
+export interface TeamMember {
+  userId: string
+  login: string
+  name: string
+  joinedAt: number
 }
 
 export interface VoteResult {

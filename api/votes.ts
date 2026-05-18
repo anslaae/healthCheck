@@ -4,6 +4,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { canViewTeam, getAuthSession } from './_authz.js'
 import { readData, writeData } from './_store.js'
 import type { Vote } from './_store.js'
 
@@ -21,11 +22,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   try {
+    const session = await getAuthSession(req)
     const data = await readData()
     const check = data.healthChecks.find((c) => c.id === healthCheckId)
 
     if (!check) {
       res.status(404).json({ error: 'Health check not found' })
+      return
+    }
+
+    const team = data.teams.find((t) => t.id === check.teamId)
+    if (!team) {
+      res.status(404).json({ error: 'Team not found' })
+      return
+    }
+
+    if (!canViewTeam(team, session)) {
+      res.status(403).json({ error: 'Not allowed to vote in this private team' })
       return
     }
 

@@ -6,25 +6,32 @@ import { ParticipantResultsView } from './components/ParticipantResultsView'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
-import { Heart, UsersThree, Warning } from '@phosphor-icons/react'
+import { Heart, LockSimple, UsersThree, Warning } from '@phosphor-icons/react'
 import { Toaster } from './components/ui/sonner'
 import { motion } from 'framer-motion'
-import { createTeam, fetchAppData, submitVotes } from './lib/dataService'
+import { createTeam, fetchAppData, joinPrivateTeamByInvite, submitVotes } from './lib/dataService'
 import { generateHealthCheckId } from './lib/healthCheckUtils'
 import { toast } from 'sonner'
 import { PageStatusCard } from './components/PageStatusCard'
 import { useAsyncAction } from './hooks/useAsyncAction'
+import { useAuthSession } from './hooks/useAuthSession'
+import { Checkbox } from './components/ui/checkbox'
+import { Label } from './components/ui/label'
 
 function App() {
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newTeamName, setNewTeamName] = useState('')
+  const [newTeamPrivate, setNewTeamPrivate] = useState(false)
+  const [inviteHandled, setInviteHandled] = useState(false)
+  const { session, isLoading: isAuthLoading } = useAuthSession()
   const { isRunning: isCreatingTeam, run: runCreateTeam } = useAsyncAction()
 
   const urlParams = new URLSearchParams(window.location.search)
   const checkId = urlParams.get('check')
   const teamId = urlParams.get('team')
+  const inviteCode = urlParams.get('invite')
   const forceResults = urlParams.get('results') === 'true'
 
   useEffect(() => {
@@ -41,7 +48,33 @@ function App() {
 
     void handleRefresh()
   }, [])
-  
+
+  useEffect(() => {
+    if (inviteHandled || !inviteCode || isAuthLoading) {
+      return
+    }
+
+    setInviteHandled(true)
+
+    const handleInviteJoin = async () => {
+      if (!session.authenticated) {
+        toast.error('Please sign in before joining a private team invite')
+        return
+      }
+
+      try {
+        const result = await joinPrivateTeamByInvite(inviteCode)
+        toast.success(`Joined ${result.teamName}`)
+        window.location.href = `${window.location.origin}?team=${result.teamId}`
+      } catch (error) {
+        console.error('Failed to join team by invite', error)
+        toast.error('Invite link is invalid, expired, or unavailable')
+      }
+    }
+
+    void handleInviteJoin()
+  }, [inviteCode, inviteHandled, isAuthLoading, session])
+
   const handleVoteSubmit = async (votes: Vote[]) => {
     if (!checkId) {
       console.error('No checkId found for vote submission')
@@ -91,12 +124,15 @@ function App() {
       id: generateHealthCheckId(),
       name,
       createdAt: Date.now(),
+      visibility: newTeamPrivate ? 'private' : 'public',
+      members: [],
     }
 
     await runCreateTeam(async () => {
       try {
         await createTeam(newTeam)
         setNewTeamName('')
+        setNewTeamPrivate(false)
         await handleRefresh()
         toast.success(`Team "${name}" created`)
       } catch (error) {
@@ -144,6 +180,7 @@ function App() {
         <TeamDetailsView
           team={team}
           healthChecks={teamHealthChecks}
+          session={session}
           onBack={() => window.location.href = '/'}
           onRefresh={handleRefresh}
         />
@@ -241,10 +278,25 @@ function App() {
                     placeholder="New team name"
                     disabled={isCreatingTeam}
                   />
-                  <Button onClick={handleCreateTeam} disabled={!newTeamName.trim() || isCreatingTeam}>
+                  <Button onClick={handleCreateTeam} disabled={!newTeamName.trim() || isCreatingTeam || !session.authenticated}>
                     {isCreatingTeam ? 'Creating…' : 'Create Team'}
                   </Button>
                 </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <Checkbox
+                    id="new-team-private"
+                    checked={newTeamPrivate}
+                    disabled={!session.authenticated || isCreatingTeam}
+                    onCheckedChange={(checked) => setNewTeamPrivate(Boolean(checked))}
+                  />
+                  <Label htmlFor="new-team-private" className="flex items-center gap-2 text-sm">
+                    <LockSimple size={14} weight="bold" />
+                    Private team (members only)
+                  </Label>
+                </div>
+                {!session.authenticated && !isAuthLoading && (
+                  <p className="mt-3 text-sm text-muted-foreground">Sign in to create teams or make teams private.</p>
+                )}
               </CardContent>
             </Card>
             
@@ -284,6 +336,7 @@ function App() {
                           <div>
                             <CardTitle className="text-lg">{team.name}</CardTitle>
                             <CardDescription className="text-xs">
+                              {team.visibility === 'private' ? 'Private' : 'Public'} •{' '}
                               {healthChecks.filter(c => c.teamId === team.id).length} health checks
                             </CardDescription>
                           </div>
