@@ -3,7 +3,7 @@ import { AuthSessionResponse, Team, HealthCheck, Question } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -245,6 +245,7 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
   
   return (
     <>
+    <Dialog open={isCreatingCheck} onOpenChange={setIsCreatingCheck}>
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
@@ -311,6 +312,21 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                   : 'Only private team members can create invite links'
                 : 'Copy public team page link'}
             </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsCreatingCheck(true)}
+                disabled={isSubmitting}
+                className="cursor-pointer"
+              >
+                <Plus size={16} weight="bold" className="mr-2" />
+                New Check
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Create a new health check</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -429,129 +445,17 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
           <Accordion type="single" collapsible>
             <AccordionItem value="history" className="border-none">
               <CardHeader>
-                <div className="flex items-center justify-between gap-4">
-                  <AccordionTrigger className="py-0 hover:no-underline">
-                    <div className="flex items-center gap-3 text-left">
-                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                        <CalendarBlank size={20} weight="bold" className="text-accent" />
-                      </div>
-                      <div>
-                        <CardTitle>Health Check History</CardTitle>
-                        <CardDescription>
-                          All health checks for this team
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <Dialog open={isCreatingCheck} onOpenChange={setIsCreatingCheck}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DialogTrigger asChild>
-                          <Button className="cursor-pointer" disabled={isSubmitting}>
-                            <Plus weight="bold" className="mr-2" />
-                            New Check
-                          </Button>
-                        </DialogTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>Create a new health check</TooltipContent>
-                    </Tooltip>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Create Health Check</DialogTitle>
-                        <DialogDescription>
-                          Create a new health check for {team.name}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="check-name">Health Check Name</Label>
-                          <Input
-                            id="check-name"
-                            value={newCheckName}
-                            onChange={(e) => setNewCheckName(e.target.value)}
-                            placeholder="Q1 2024 Health Check"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Questions</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Edit or add questions for team members to answer
-                          </p>
-                          {checkQuestions.map((question, index) => (
-                            <div key={index} className="space-y-2 p-3 border rounded-lg">
-                              <div className="flex gap-2">
-                                <Input
-                                  value={question.text}
-                                  onChange={(e) => {
-                                    const newQuestions = [...checkQuestions]
-                                    newQuestions[index] = { ...newQuestions[index], text: e.target.value }
-                                    setCheckQuestions(newQuestions)
-                                  }}
-                                  placeholder={`Question ${index + 1}`}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setCheckQuestions(checkQuestions.filter((_, i) => i !== index))
-                                  }}
-                                  className="cursor-pointer"
-                                >
-                                  <Trash size={16} />
-                                </Button>
-                              </div>
-                              <div className="grid gap-2 grid-cols-2">
-                                <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">Happy (😊) explanation</Label>
-                                  <Textarea
-                                    value={question.happyExplanation || ''}
-                                    onChange={(e) => {
-                                      const newQuestions = [...checkQuestions]
-                                      newQuestions[index] = { ...newQuestions[index], happyExplanation: e.target.value }
-                                      setCheckQuestions(newQuestions)
-                                    }}
-                                    placeholder="Optional: What does 'happy' mean?"
-                                    className="text-sm min-h-[60px]"
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">Unhappy (😞) explanation</Label>
-                                  <Textarea
-                                    value={question.unhappyExplanation || ''}
-                                    onChange={(e) => {
-                                      const newQuestions = [...checkQuestions]
-                                      newQuestions[index] = { ...newQuestions[index], unhappyExplanation: e.target.value }
-                                      setCheckQuestions(newQuestions)
-                                    }}
-                                    placeholder="Optional: What does 'unhappy' mean?"
-                                    className="text-sm min-h-[60px]"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCheckQuestions([...checkQuestions, { text: '' }])}
-                            className="cursor-pointer"
-                          >
-                            <Plus size={16} className="mr-2" />
-                            Add Question
-                          </Button>
-                        </div>
-
-                        <Button onClick={handleCreateHealthCheck} disabled={isSubmitting} className="w-full cursor-pointer">
-                          {isSubmitting ? 'Creating…' : 'Create Health Check'}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                <AccordionTrigger className="py-0 hover:no-underline">
+                  <div className="text-left">
+                    <CardTitle>Health Check History</CardTitle>
+                    <CardDescription>
+                      All health checks for this team
+                    </CardDescription>
+                  </div>
+                </AccordionTrigger>
               </CardHeader>
               <AccordionContent>
-                <CardContent>
+                <CardContent className="space-y-4">
             {sortedChecks.length === 0 ? (
               <div className="py-12 text-center">
                 <CalendarBlank size={48} className="mx-auto mb-4 text-muted-foreground" />
@@ -559,15 +463,11 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                 <p className="text-muted-foreground mb-4">
                   Create a health check for this team to start tracking trends
                 </p>
-                <Button onClick={() => setIsCreatingCheck(true)} disabled={isSubmitting} className="cursor-pointer">
-                  <Plus weight="bold" className="mr-2" />
-                  Create Health Check
-                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsDeleteTeamDialogOpen(true)}
                   disabled={isDeletingTeam}
-                  className="ml-3 cursor-pointer text-destructive hover:text-destructive"
+                  className="cursor-pointer text-destructive hover:text-destructive"
                 >
                   <Trash weight="bold" className="mr-2" />
                   Delete Team
@@ -679,17 +579,117 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                 })}
               </div>
             )}
+                  <div className="flex justify-end">
+                    <Button className="cursor-pointer" disabled={isSubmitting} onClick={() => setIsCreatingCheck(true)}>
+                      <Plus weight="bold" className="mr-2" />
+                      New Check
+                    </Button>
+                  </div>
                 </CardContent>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </Card>
 
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Health Check</DialogTitle>
+            <DialogDescription>
+              Create a new health check for {team.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="check-name">Health Check Name</Label>
+              <Input
+                id="check-name"
+                value={newCheckName}
+                onChange={(e) => setNewCheckName(e.target.value)}
+                placeholder="Q1 2024 Health Check"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Questions</Label>
+              <p className="text-sm text-muted-foreground">
+                Edit or add questions for team members to answer
+              </p>
+              {checkQuestions.map((question, index) => (
+                <div key={index} className="space-y-2 p-3 border rounded-lg">
+                  <div className="flex gap-2">
+                    <Input
+                      value={question.text}
+                      onChange={(e) => {
+                        const newQuestions = [...checkQuestions]
+                        newQuestions[index] = { ...newQuestions[index], text: e.target.value }
+                        setCheckQuestions(newQuestions)
+                      }}
+                      placeholder={`Question ${index + 1}`}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setCheckQuestions(checkQuestions.filter((_, i) => i !== index))
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Trash size={16} />
+                    </Button>
+                  </div>
+                  <div className="grid gap-2 grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Happy (😊) explanation</Label>
+                      <Textarea
+                        value={question.happyExplanation || ''}
+                        onChange={(e) => {
+                          const newQuestions = [...checkQuestions]
+                          newQuestions[index] = { ...newQuestions[index], happyExplanation: e.target.value }
+                          setCheckQuestions(newQuestions)
+                        }}
+                        placeholder="Optional: What does 'happy' mean?"
+                        className="text-sm min-h-[60px]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Unhappy (😞) explanation</Label>
+                      <Textarea
+                        value={question.unhappyExplanation || ''}
+                        onChange={(e) => {
+                          const newQuestions = [...checkQuestions]
+                          newQuestions[index] = { ...newQuestions[index], unhappyExplanation: e.target.value }
+                          setCheckQuestions(newQuestions)
+                        }}
+                        placeholder="Optional: What does 'unhappy' mean?"
+                        className="text-sm min-h-[60px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCheckQuestions([...checkQuestions, { text: '' }])}
+                className="cursor-pointer"
+              >
+                <Plus size={16} className="mr-2" />
+                Add Question
+              </Button>
+            </div>
+
+            <Button onClick={handleCreateHealthCheck} disabled={isSubmitting} className="w-full cursor-pointer">
+              {isSubmitting ? 'Creating…' : 'Create Health Check'}
+            </Button>
+          </div>
+        </DialogContent>
+
         {sortedChecks.length > 0 && <ParticipationChart healthChecks={sortedChecks} />}
 
         {sortedChecks.length > 0 && <QuestionTrendsChart healthChecks={sortedChecks} />}
       </main>
     </div>
+    </Dialog>
 
     <AlertDialog
       open={!!deletingCheckId}
