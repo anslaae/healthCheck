@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { ArrowLeft, CalendarBlank, ArrowsClockwise, ShareNetwork, Plus, Check, Trash, Eye, LockSimple, ChatCircleDots, LinkSimple } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { ParticipationChart } from './ParticipationChart'
@@ -46,7 +47,9 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
   const isMember = session.authenticated && team.members.some((member) => member.userId === session.user.id)
 
   const sortedChecks = [...healthChecks].sort((a, b) => a.createdAt - b.createdAt)
-  
+  const isPrivateTeam = team.visibility === 'private'
+  const memberCount = team.members.length
+
   const totalQuestions = healthChecks.reduce((sum, check) => sum + check.questions.length, 0)
   const totalParticipants = healthChecks.reduce((sum, check) => {
     const uniqueVoters = check.questions.length > 0 
@@ -349,7 +352,7 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
       </header>
       
       <main className="max-w-5xl mx-auto p-6 md:p-8 space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className={`grid gap-4 ${isPrivateTeam ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>Health Checks</CardDescription>
@@ -370,134 +373,185 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
               <CardTitle className="text-3xl">{totalQuestions}</CardTitle>
             </CardHeader>
           </Card>
+
+          {isPrivateTeam && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardDescription>Members</CardDescription>
+                <CardTitle className="text-3xl">{memberCount}</CardTitle>
+              </CardHeader>
+            </Card>
+          )}
         </div>
-        
-        {sortedChecks.length > 0 && <ParticipationChart healthChecks={sortedChecks} />}
-        
-        {sortedChecks.length > 0 && <QuestionTrendsChart healthChecks={sortedChecks} />}
-        
+
+        {isPrivateTeam && (
+          <Card>
+            <Accordion type="single" collapsible>
+              <AccordionItem value="members" className="border-none">
+                <CardHeader>
+                  <AccordionTrigger className="py-0 hover:no-underline">
+                    <div className="text-left">
+                      <CardTitle>Team Members</CardTitle>
+                      <CardDescription>Members with access to this private team</CardDescription>
+                    </div>
+                  </AccordionTrigger>
+                </CardHeader>
+                <AccordionContent>
+                  <CardContent>
+                    {team.members.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No members yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {team.members
+                          .slice()
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((member) => (
+                            <div key={member.userId} className="flex items-center justify-between rounded-md border px-3 py-2">
+                              <div>
+                                <p className="text-sm font-medium leading-none">{member.name}</p>
+                                <p className="text-xs text-muted-foreground">@{member.login}</p>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Joined {new Date(member.joinedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </Card>
+        )}
+
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                  <CalendarBlank size={20} weight="bold" className="text-accent" />
-                </div>
-                <div>
-                  <CardTitle>Health Check History</CardTitle>
-                  <CardDescription>
-                    All health checks for this team
-                  </CardDescription>
-                </div>
-              </div>
-              <Dialog open={isCreatingCheck} onOpenChange={setIsCreatingCheck}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                      <Button className="cursor-pointer" disabled={isSubmitting}>
-                        <Plus weight="bold" className="mr-2" />
-                        New Check
-                      </Button>
-                    </DialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>Create a new health check</TooltipContent>
-                </Tooltip>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Create Health Check</DialogTitle>
-                    <DialogDescription>
-                      Create a new health check for {team.name}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="check-name">Health Check Name</Label>
-                      <Input
-                        id="check-name"
-                        value={newCheckName}
-                        onChange={(e) => setNewCheckName(e.target.value)}
-                        placeholder="Q1 2024 Health Check"
-                      />
+          <Accordion type="single" collapsible>
+            <AccordionItem value="history" className="border-none">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-4">
+                  <AccordionTrigger className="py-0 hover:no-underline">
+                    <div className="flex items-center gap-3 text-left">
+                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                        <CalendarBlank size={20} weight="bold" className="text-accent" />
+                      </div>
+                      <div>
+                        <CardTitle>Health Check History</CardTitle>
+                        <CardDescription>
+                          All health checks for this team
+                        </CardDescription>
+                      </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Questions</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Edit or add questions for team members to answer
-                      </p>
-                      {checkQuestions.map((question, index) => (
-                        <div key={index} className="space-y-2 p-3 border rounded-lg">
-                          <div className="flex gap-2">
-                            <Input
-                              value={question.text}
-                              onChange={(e) => {
-                                const newQuestions = [...checkQuestions]
-                                newQuestions[index] = { ...newQuestions[index], text: e.target.value }
-                                setCheckQuestions(newQuestions)
-                              }}
-                              placeholder={`Question ${index + 1}`}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCheckQuestions(checkQuestions.filter((_, i) => i !== index))
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <Trash size={16} />
-                            </Button>
-                          </div>
-                          <div className="grid gap-2 grid-cols-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Happy (😊) explanation</Label>
-                              <Textarea
-                                value={question.happyExplanation || ''}
-                                onChange={(e) => {
-                                  const newQuestions = [...checkQuestions]
-                                  newQuestions[index] = { ...newQuestions[index], happyExplanation: e.target.value }
-                                  setCheckQuestions(newQuestions)
-                                }}
-                                placeholder="Optional: What does 'happy' mean?"
-                                className="text-sm min-h-[60px]"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Unhappy (😞) explanation</Label>
-                              <Textarea
-                                value={question.unhappyExplanation || ''}
-                                onChange={(e) => {
-                                  const newQuestions = [...checkQuestions]
-                                  newQuestions[index] = { ...newQuestions[index], unhappyExplanation: e.target.value }
-                                  setCheckQuestions(newQuestions)
-                                }}
-                                placeholder="Optional: What does 'unhappy' mean?"
-                                className="text-sm min-h-[60px]"
-                              />
-                            </div>
-                          </div>
+                  </AccordionTrigger>
+                  <Dialog open={isCreatingCheck} onOpenChange={setIsCreatingCheck}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                          <Button className="cursor-pointer" disabled={isSubmitting}>
+                            <Plus weight="bold" className="mr-2" />
+                            New Check
+                          </Button>
+                        </DialogTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>Create a new health check</TooltipContent>
+                    </Tooltip>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Create Health Check</DialogTitle>
+                        <DialogDescription>
+                          Create a new health check for {team.name}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="check-name">Health Check Name</Label>
+                          <Input
+                            id="check-name"
+                            value={newCheckName}
+                            onChange={(e) => setNewCheckName(e.target.value)}
+                            placeholder="Q1 2024 Health Check"
+                          />
                         </div>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCheckQuestions([...checkQuestions, { text: '' }])}
-                        className="cursor-pointer"
-                      >
-                        <Plus size={16} className="mr-2" />
-                        Add Question
-                      </Button>
-                    </div>
-                    
-                    <Button onClick={handleCreateHealthCheck} disabled={isSubmitting} className="w-full cursor-pointer">
-                      {isSubmitting ? 'Creating…' : 'Create Health Check'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent>
+
+                        <div className="space-y-2">
+                          <Label>Questions</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Edit or add questions for team members to answer
+                          </p>
+                          {checkQuestions.map((question, index) => (
+                            <div key={index} className="space-y-2 p-3 border rounded-lg">
+                              <div className="flex gap-2">
+                                <Input
+                                  value={question.text}
+                                  onChange={(e) => {
+                                    const newQuestions = [...checkQuestions]
+                                    newQuestions[index] = { ...newQuestions[index], text: e.target.value }
+                                    setCheckQuestions(newQuestions)
+                                  }}
+                                  placeholder={`Question ${index + 1}`}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setCheckQuestions(checkQuestions.filter((_, i) => i !== index))
+                                  }}
+                                  className="cursor-pointer"
+                                >
+                                  <Trash size={16} />
+                                </Button>
+                              </div>
+                              <div className="grid gap-2 grid-cols-2">
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Happy (😊) explanation</Label>
+                                  <Textarea
+                                    value={question.happyExplanation || ''}
+                                    onChange={(e) => {
+                                      const newQuestions = [...checkQuestions]
+                                      newQuestions[index] = { ...newQuestions[index], happyExplanation: e.target.value }
+                                      setCheckQuestions(newQuestions)
+                                    }}
+                                    placeholder="Optional: What does 'happy' mean?"
+                                    className="text-sm min-h-[60px]"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Unhappy (😞) explanation</Label>
+                                  <Textarea
+                                    value={question.unhappyExplanation || ''}
+                                    onChange={(e) => {
+                                      const newQuestions = [...checkQuestions]
+                                      newQuestions[index] = { ...newQuestions[index], unhappyExplanation: e.target.value }
+                                      setCheckQuestions(newQuestions)
+                                    }}
+                                    placeholder="Optional: What does 'unhappy' mean?"
+                                    className="text-sm min-h-[60px]"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCheckQuestions([...checkQuestions, { text: '' }])}
+                            className="cursor-pointer"
+                          >
+                            <Plus size={16} className="mr-2" />
+                            Add Question
+                          </Button>
+                        </div>
+
+                        <Button onClick={handleCreateHealthCheck} disabled={isSubmitting} className="w-full cursor-pointer">
+                          {isSubmitting ? 'Creating…' : 'Create Health Check'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <AccordionContent>
+                <CardContent>
             {sortedChecks.length === 0 ? (
               <div className="py-12 text-center">
                 <CalendarBlank size={48} className="mx-auto mb-4 text-muted-foreground" />
@@ -625,8 +679,15 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                 })}
               </div>
             )}
-          </CardContent>
+                </CardContent>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </Card>
+
+        {sortedChecks.length > 0 && <ParticipationChart healthChecks={sortedChecks} />}
+
+        {sortedChecks.length > 0 && <QuestionTrendsChart healthChecks={sortedChecks} />}
       </main>
     </div>
 
