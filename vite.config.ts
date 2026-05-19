@@ -16,4 +16,35 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return
+          }
+
+          if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/')) {
+            return 'framework-vendor'
+          }
+
+          if (id.includes('/recharts/')) {
+            return 'charts-vendor'
+          }
+
+          if (id.includes('/framer-motion/')) {
+            return 'motion-vendor'
+          }
+
+          if (id.includes('/@radix-ui/')) {
+            return 'radix-vendor'
+          }
+
+          if (id.includes('/@phosphor-icons/')) {
+            return 'icons-vendor'
+          }
+        },
+      },
+    },
+  },
 });
