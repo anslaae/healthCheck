@@ -313,8 +313,8 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
             </TooltipTrigger>
             <TooltipContent>
               {team.visibility === 'private'
-                ? isMember
-                  ? 'Copy invite link for private team members'
+                  ? isMember
+                    ? 'Copy invite link for private team members (creating a new link invalidates old ones)'
                   : 'Only private team members can create invite links'
                 : 'Copy public team page link'}
             </TooltipContent>

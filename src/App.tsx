@@ -30,6 +30,7 @@ function App() {
   const [newTeamName, setNewTeamName] = useState('')
   const [newTeamPrivate, setNewTeamPrivate] = useState(false)
   const [inviteHandled, setInviteHandled] = useState(false)
+  const [isJoiningInvite, setIsJoiningInvite] = useState(false)
   const [isPublicTeamsExpanded, setIsPublicTeamsExpanded] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { session, isLoading: isAuthLoading } = useAuthSession()
@@ -40,6 +41,14 @@ function App() {
   const teamId = urlParams.get('team')
   const inviteCode = urlParams.get('invite')
   const forceResults = urlParams.get('results') === 'true'
+
+  const clearInviteFromUrl = () => {
+    const params = new URLSearchParams(window.location.search)
+    params.delete('invite')
+    const cleaned = params.toString()
+    const nextUrl = cleaned ? `${window.location.pathname}?${cleaned}` : window.location.pathname
+    window.history.replaceState({}, '', nextUrl)
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -61,21 +70,30 @@ function App() {
       return
     }
 
+    setIsJoiningInvite(true)
     setInviteHandled(true)
 
     const handleInviteJoin = async () => {
       if (!session.authenticated) {
         toast.error('Please sign in before joining a private team invite')
+        clearInviteFromUrl()
+        setIsJoiningInvite(false)
         return
       }
 
       try {
         const result = await joinPrivateTeamByInvite(inviteCode)
-        toast.success(`Joined ${result.teamName}`)
+        if (result.alreadyMember) {
+          toast.info(`Looks like you are already a member of ${result.teamName}`)
+        } else {
+          toast.success(`Joined ${result.teamName}`)
+        }
         window.location.href = `${window.location.origin}?team=${result.teamId}`
       } catch (error) {
         console.error('Failed to join team by invite', error)
         toast.error('Invite link is invalid, expired, or unavailable')
+        clearInviteFromUrl()
+        setIsJoiningInvite(false)
       }
     }
 
@@ -214,6 +232,19 @@ function App() {
       ))}
     </div>
   )
+
+  if (inviteCode && (isAuthLoading || isJoiningInvite || !inviteHandled)) {
+    return (
+      <>
+        <PageStatusCard
+          loading
+          title="Opening invite…"
+          description="Checking your access and joining the private team."
+        />
+        <Toaster />
+      </>
+    )
+  }
   
   if (teamId) {
     // Still loading — don't flash "not found" before data arrives

@@ -55,7 +55,7 @@ export async function createPrivateTeamInvite(teamId: string): Promise<{ inviteU
 }
 
 /** Join a private team using an invite code. */
-export async function joinPrivateTeamByInvite(inviteCode: string): Promise<{ teamId: string; teamName: string }> {
+export async function joinPrivateTeamByInvite(inviteCode: string): Promise<{ teamId: string; teamName: string; alreadyMember: boolean }> {
   return apiFetch('/api/team-members', {
     method: 'POST',
     body: JSON.stringify({ action: 'joinByInvite', inviteCode }),

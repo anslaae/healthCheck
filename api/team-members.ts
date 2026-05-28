@@ -89,7 +89,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return
       }
 
-      if (!isTeamMember(team, session.user.id)) {
+      const alreadyMember = isTeamMember(team, session.user.id)
+
+      if (!alreadyMember) {
         team.members.push({
           userId: session.user.id,
           login: session.user.login,
@@ -100,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         await writeData(data)
       }
 
-      res.status(200).json({ success: true, teamId: team.id, teamName: team.name })
+      res.status(200).json({ success: true, teamId: team.id, teamName: team.name, alreadyMember })
     } catch (error) {
       console.error('[POST /api/team-members action=joinByInvite]', error)
       res.status(500).json({ error: 'Failed to join team from invite link' })
