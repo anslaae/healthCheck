@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { loginWithGithub } from '@/lib/authService'
+import { shouldRedirectToOverviewAfterLogout } from '@/lib/logoutRedirect'
 import { GithubLogo, SignIn, SignOut, UserCircle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
@@ -36,7 +37,13 @@ export function AuthMenu() {
 
   const handleSignOut = async () => {
     try {
+      const shouldRedirect = await shouldRedirectToOverviewAfterLogout()
       await signOut()
+      if (shouldRedirect) {
+        window.location.href = '/'
+        return
+      }
+
       toast.success('Signed out')
     } catch (error) {
       console.error('Failed to sign out', error)

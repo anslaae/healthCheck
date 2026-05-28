@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { loginWithGithub } from '@/lib/authService'
-import { fetchAppData } from '@/lib/dataService'
+import { shouldRedirectToOverviewAfterLogout } from '@/lib/logoutRedirect'
 import { cn } from '@/lib/utils'
 import { GithubLogo, SignIn, SignOut } from '@phosphor-icons/react'
 import { toast } from 'sonner'
@@ -34,27 +34,12 @@ export function AuthMenuContent({ onAction, className }: AuthMenuContentProps) {
 
   const handleSignOut = async () => {
     try {
+      const shouldRedirect = await shouldRedirectToOverviewAfterLogout()
       await signOut()
-
-      const urlParams = new URLSearchParams(window.location.search)
-      const teamId = urlParams.get('team')
-      const checkId = urlParams.get('check')
-
-      if (teamId || checkId) {
-        try {
-          const { teams, healthChecks } = await fetchAppData()
-          const teamVisible = teamId ? teams.some((team) => team.id === teamId) : true
-          const checkVisible = checkId ? healthChecks.some((check) => check.id === checkId) : true
-
-          if (!teamVisible || !checkVisible) {
-            window.location.href = '/'
-            return
-          }
-        } catch (error) {
-          console.error('Failed to validate route access after sign-out', error)
-          window.location.href = '/'
-          return
-        }
+      if (shouldRedirect) {
+        window.location.href = '/'
+        onAction?.()
+        return
       }
 
       toast.success('Signed out')
