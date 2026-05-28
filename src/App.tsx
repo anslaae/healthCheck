@@ -17,6 +17,9 @@ import { useAsyncAction } from './hooks/useAsyncAction'
 import { useAuthSession } from './hooks/useAuthSession'
 import { Checkbox } from './components/ui/checkbox'
 import { Label } from './components/ui/label'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion'
+
+const PUBLIC_TEAMS_EXPANDED_STORAGE_KEY = 'healthcheck:publicTeamsExpanded'
 
 function App() {
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([])
@@ -25,6 +28,7 @@ function App() {
   const [newTeamName, setNewTeamName] = useState('')
   const [newTeamPrivate, setNewTeamPrivate] = useState(false)
   const [inviteHandled, setInviteHandled] = useState(false)
+  const [isPublicTeamsExpanded, setIsPublicTeamsExpanded] = useState(true)
   const { session, isLoading: isAuthLoading } = useAuthSession()
   const { isRunning: isCreatingTeam, run: runCreateTeam } = useAsyncAction()
 
@@ -74,6 +78,26 @@ function App() {
 
     void handleInviteJoin()
   }, [inviteCode, inviteHandled, isAuthLoading, session])
+
+  useEffect(() => {
+    if (isAuthLoading) {
+      return
+    }
+
+    if (!session.authenticated) {
+      setIsPublicTeamsExpanded(true)
+      return
+    }
+
+    const savedState = window.localStorage.getItem(PUBLIC_TEAMS_EXPANDED_STORAGE_KEY)
+    if (savedState === null) {
+      // First signed-in visit defaults to collapsed public teams.
+      setIsPublicTeamsExpanded(false)
+      return
+    }
+
+    setIsPublicTeamsExpanded(savedState === 'true')
+  }, [session.authenticated, isAuthLoading])
 
   const handleVoteSubmit = async (votes: Vote[]) => {
     if (!checkId) {
@@ -141,6 +165,52 @@ function App() {
       }
     })
   }
+
+  const handlePublicTeamsExpandedChange = (expanded: boolean) => {
+    setIsPublicTeamsExpanded(expanded)
+
+    if (session.authenticated) {
+      window.localStorage.setItem(PUBLIC_TEAMS_EXPANDED_STORAGE_KEY, String(expanded))
+    }
+  }
+
+  const myTeams = session.authenticated
+    ? teams.filter((team) => team.members.some((member) => member.userId === session.user.id))
+    : []
+  const publicTeams = teams.filter((team) => team.visibility === 'public')
+
+  const renderTeamsGrid = (list: Team[]) => (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {list.map((team, index) => (
+        <motion.div
+          key={team.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05 }}
+        >
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => window.location.href = `?team=${team.id}`}
+          >
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users size={20} className="text-primary fill-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{team.name}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {team.visibility === 'private' ? 'Private' : 'Public'} •{' '}
+                    {healthChecks.filter(c => c.teamId === team.id).length} health checks
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        </motion.div>
+      ))}
+    </div>
+  )
   
   if (teamId) {
     // Still loading — don't flash "not found" before data arrives
@@ -307,44 +377,76 @@ function App() {
                   <p className="text-muted-foreground">Please wait while we load local mock data.</p>
                 </CardContent>
               </Card>
-            ) : teams.length === 0 ? (
-               <Card>
-                 <CardContent className="py-12 text-center">
-                   <Users size={48} className="mx-auto mb-4 text-muted-foreground" />
-                   <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
-                   <p className="text-muted-foreground">Create your first team above</p>
-                 </CardContent>
-               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {teams.map((team, index) => (
-                  <motion.div
-                    key={team.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Card 
-                      className="hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => window.location.href = `?team=${team.id}`}
+              <div className="space-y-6">
+                {session.authenticated && !isAuthLoading && (
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-xl font-semibold">My Teams ({myTeams.length})</h3>
+                      <p className="text-sm text-muted-foreground">Private teams where you are a member.</p>
+                    </div>
+                    {myTeams.length === 0 ? (
+                      <Card>
+                        <CardContent className="py-10 text-center">
+                          <h4 className="text-base font-semibold mb-1">You are not in any private teams yet</h4>
+                          <p className="text-sm text-muted-foreground">Use an invite link to join or create a new private team above.</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      renderTeamsGrid(myTeams)
+                    )}
+                  </section>
+                )}
+
+                {session.authenticated && !isAuthLoading ? (
+                  <Card>
+                    <Accordion
+                      type="single"
+                      collapsible
+                      value={isPublicTeamsExpanded ? 'public-teams' : ''}
+                      onValueChange={(value) => handlePublicTeamsExpandedChange(value === 'public-teams')}
                     >
-                       <CardHeader>
-                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                             <Users size={20} className="text-primary fill-primary" />
-                           </div>
-                           <div>
-                             <CardTitle className="text-lg">{team.name}</CardTitle>
-                             <CardDescription className="text-xs">
-                               {team.visibility === 'private' ? 'Private' : 'Public'} •{' '}
-                               {healthChecks.filter(c => c.teamId === team.id).length} health checks
-                             </CardDescription>
-                           </div>
-                         </div>
-                       </CardHeader>
-                    </Card>
-                  </motion.div>
-                ))}
+                      <AccordionItem value="public-teams" className="border-none">
+                        <CardHeader>
+                          <AccordionTrigger className="py-0 hover:no-underline">
+                            <div className="text-left">
+                              <CardTitle>Public Teams ({publicTeams.length})</CardTitle>
+                              <CardDescription>Teams anyone can view and join via links.</CardDescription>
+                            </div>
+                          </AccordionTrigger>
+                        </CardHeader>
+                        <AccordionContent>
+                          <CardContent>
+                            {publicTeams.length === 0 ? (
+                              <div className="py-10 text-center">
+                                <h4 className="text-base font-semibold mb-1">No public teams yet</h4>
+                                <p className="text-sm text-muted-foreground">Create a public team above to get started.</p>
+                              </div>
+                            ) : (
+                              renderTeamsGrid(publicTeams)
+                            )}
+                          </CardContent>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </Card>
+                ) : teams.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <Users size={48} className="mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
+                      <p className="text-muted-foreground">Create your first team above</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-xl font-semibold">Public Teams ({publicTeams.length})</h3>
+                      <p className="text-sm text-muted-foreground">Teams anyone can view and join via links.</p>
+                    </div>
+                    {renderTeamsGrid(publicTeams)}
+                  </section>
+                )}
               </div>
             )}
           </div>
