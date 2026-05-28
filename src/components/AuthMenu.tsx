@@ -11,7 +11,7 @@ import {
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { loginWithGithub } from '@/lib/authService'
 import { shouldRedirectToOverviewAfterLogout } from '@/lib/logoutRedirect'
-import { GithubLogo, SignIn, SignOut, UserCircle } from '@phosphor-icons/react'
+import { GithubLogoIcon, SignInIcon, SignOutIcon, UserCircleIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 function initialsFromName(name: string): string {
@@ -75,7 +75,7 @@ export function AuthMenu() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => { void handleSignOut() }} className="cursor-pointer">
-              <SignOut size={16} weight="bold" />
+              <SignOutIcon size={16} weight="bold" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -91,9 +91,9 @@ export function AuthMenu() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <UserCircle size={20} className="animate-pulse" />
+                <UserCircleIcon size={20} className="animate-pulse" />
               ) : (
-                <SignIn size={20} weight="bold" />
+                <SignInIcon size={20} weight="bold" />
               )}
             </Button>
           </DropdownMenuTrigger>
@@ -105,7 +105,7 @@ export function AuthMenu() {
               className="cursor-pointer"
               disabled={isLoading}
             >
-              <GithubLogo size={16} weight="fill" />
+              <GithubLogoIcon size={16} weight="fill" />
               GitHub
             </DropdownMenuItem>
           </DropdownMenuContent>

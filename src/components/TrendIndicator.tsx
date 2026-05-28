@@ -1,5 +1,5 @@
 import { TrendData } from '@/lib/types'
-import { TrendUp, TrendDown, ArrowRight } from '@phosphor-icons/react'
+import { TrendUpIcon, TrendDownIcon, ArrowRightIcon } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
@@ -63,9 +63,9 @@ export function TrendIndicator({ trend }: TrendIndicatorProps) {
   }
   
   const icons = {
-    up: <TrendUp className="animate-float" weight="bold" />,
-    down: <TrendDown className="animate-float" weight="bold" />,
-    flat: <ArrowRight weight="bold" />,
+    up: <TrendUpIcon className="animate-float" weight="bold" />,
+    down: <TrendDownIcon className="animate-float" weight="bold" />,
+    flat: <ArrowRightIcon weight="bold" />,
   }
   
   const colors = {

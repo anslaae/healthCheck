@@ -4,7 +4,7 @@ import { useAuthSession } from '@/hooks/useAuthSession'
 import { loginWithGithub } from '@/lib/authService'
 import { shouldRedirectToOverviewAfterLogout } from '@/lib/logoutRedirect'
 import { cn } from '@/lib/utils'
-import { GithubLogo, SignIn, SignOut } from '@phosphor-icons/react'
+import { GithubLogoIcon, SignInIcon, SignOutIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 interface AuthMenuContentProps {
@@ -72,7 +72,7 @@ export function AuthMenuContent({ onAction, className }: AuthMenuContentProps) {
             onClick={() => { void handleSignOut() }}
             className="w-full justify-start rounded-lg gap-2 cursor-pointer"
           >
-            <SignOut size={16} weight="bold" />
+            <SignOutIcon size={16} weight="bold" />
             Sign out
           </Button>
         </>
@@ -88,7 +88,7 @@ export function AuthMenuContent({ onAction, className }: AuthMenuContentProps) {
             disabled={isLoading}
             className="w-full justify-start rounded-lg gap-2 cursor-pointer"
           >
-            {isLoading ? <SignIn size={16} className="animate-pulse" /> : <GithubLogo size={16} weight="fill" />}
+            {isLoading ? <SignInIcon size={16} className="animate-pulse" /> : <GithubLogoIcon size={16} weight="fill" />}
             {isLoading ? 'Checking session…' : 'Sign in with GitHub'}
           </Button>
         </div>

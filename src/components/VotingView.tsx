@@ -4,7 +4,7 @@ import { VoteButton } from './VoteButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ParticipantResultsView } from './ParticipantResultsView'
-import { ArrowLeft, Heart, PaperPlaneRight, List } from '@phosphor-icons/react'
+import { ArrowLeftIcon, HeartIcon, PaperPlaneRightIcon, ListIcon } from '@phosphor-icons/react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { AuthMenuContent } from './AuthMenuContent'
@@ -99,7 +99,7 @@ export function VotingView({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer shrink-0">
-                <ArrowLeft weight="bold" className="mr-2" />
+                <ArrowLeftIcon weight="bold" className="mr-2" />
                 <span className="hidden sm:inline">Back to Team Overview</span>
               </Button>
             </TooltipTrigger>
@@ -113,7 +113,7 @@ export function VotingView({
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="cursor-pointer" aria-label="Open voting menu" title="Menu">
-                  <List size={18} weight="bold" />
+                  <ListIcon size={18} weight="bold" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
@@ -130,7 +130,7 @@ export function VotingView({
                     }}
                     className="w-full justify-start rounded-lg cursor-pointer"
                   >
-                    <ArrowLeft size={16} weight="bold" className="mr-2" />
+                    <ArrowLeftIcon size={16} weight="bold" className="mr-2" />
                     Back to Team Overview
                   </Button>
                   <AuthMenuContent onAction={() => setIsMobileMenuOpen(false)} />
@@ -147,7 +147,7 @@ export function VotingView({
           className="text-center space-y-3"
         >
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-2">
-            <Heart size={32} weight="fill" className="text-primary" />
+            <HeartIcon size={32} weight="fill" className="text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
             {healthCheck.name}
@@ -246,7 +246,7 @@ export function VotingView({
             className="w-full md:w-auto md:min-w-64 mx-auto flex shadow-lg text-lg h-14 cursor-pointer"
             disabled={Object.keys(votes).length !== healthCheck.questions.length || isSubmitting}
           >
-            <PaperPlaneRight size={20} weight="bold" className="mr-2" />
+            <PaperPlaneRightIcon size={20} weight="bold" className="mr-2" />
             {isSubmitting ? 'Submitting…' : 'Submit Feedback'}
           </Button>
         </div>

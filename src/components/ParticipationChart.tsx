@@ -1,7 +1,7 @@
 import { HealthCheck } from '@/lib/types'
 import { getPaddedTimeDomain } from '@/lib/chartTimeDomain'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users } from '@phosphor-icons/react'
+import { UsersIcon } from '@phosphor-icons/react'
 import { CartesianGrid, Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 interface ParticipationChartProps {
@@ -94,7 +94,7 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Users size={20} weight="bold" className="text-primary" />
+              <UsersIcon size={20} weight="bold" className="text-primary" />
             </div>
             <CardTitle>Participation Over Time</CardTitle>
           </div>

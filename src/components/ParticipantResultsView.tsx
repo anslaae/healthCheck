@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Heart, ArrowsClockwise, CheckCircle, PaperPlaneRight, List } from '@phosphor-icons/react'
+import { ArrowLeftIcon, HeartIcon, ArrowsClockwiseIcon, CheckCircleIcon, PaperPlaneRightIcon, ListIcon } from '@phosphor-icons/react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { getResultsWithTrends } from '@/lib/healthCheckUtils'
@@ -87,7 +87,7 @@ export function ParticipantResultsView({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer shrink-0">
-                <ArrowLeft weight="bold" className="mr-2" />
+                <ArrowLeftIcon weight="bold" className="mr-2" />
                 <span className="hidden sm:inline">Back to Team Overview</span>
               </Button>
             </TooltipTrigger>
@@ -95,7 +95,7 @@ export function ParticipantResultsView({
           </Tooltip>
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 rounded-full bg-happy/20 flex items-center justify-center">
-              <CheckCircle size={20} weight="fill" className="text-happy" />
+              <CheckCircleIcon size={20} weight="fill" className="text-happy" />
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold truncate">{healthCheck.name}</h1>
@@ -112,7 +112,7 @@ export function ParticipantResultsView({
                     onClick={onGoToVoting}
                     className="cursor-pointer"
                   >
-                    <PaperPlaneRight size={16} weight="bold" className="mr-2" />
+                    <PaperPlaneRightIcon size={16} weight="bold" className="mr-2" />
                     Go to Voting
                   </Button>
                 </TooltipTrigger>
@@ -127,7 +127,7 @@ export function ParticipantResultsView({
                   onClick={() => setAutoRefreshEnabled((enabled) => !enabled)}
                   className="cursor-pointer"
                 >
-                  <ArrowsClockwise
+                  <ArrowsClockwiseIcon
                     size={16}
                     weight="bold"
                     className={`mr-2 ${autoRefreshEnabled ? 'text-primary' : ''}`}
@@ -148,7 +148,7 @@ export function ParticipantResultsView({
                   disabled={isRefreshing}
                   className="cursor-pointer"
                 >
-                  <ArrowsClockwise
+                  <ArrowsClockwiseIcon
                     size={16}
                     weight="bold"
                     className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -163,7 +163,7 @@ export function ParticipantResultsView({
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="cursor-pointer" aria-label="Open results actions menu" title="Menu">
-                  <List size={18} weight="bold" />
+                  <ListIcon size={18} weight="bold" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
@@ -181,7 +181,7 @@ export function ParticipantResultsView({
                       }}
                       className="w-full justify-start rounded-lg cursor-pointer"
                     >
-                      <PaperPlaneRight size={16} weight="bold" className="mr-2" />
+                      <PaperPlaneRightIcon size={16} weight="bold" className="mr-2" />
                       Go to Voting
                     </Button>
                   )}
@@ -193,7 +193,7 @@ export function ParticipantResultsView({
                     }}
                     className="w-full justify-start rounded-lg cursor-pointer"
                   >
-                    <ArrowsClockwise size={16} weight="bold" className={`mr-2 ${autoRefreshEnabled ? 'text-primary' : ''}`} />
+                    <ArrowsClockwiseIcon size={16} weight="bold" className={`mr-2 ${autoRefreshEnabled ? 'text-primary' : ''}`} />
                     {autoRefreshEnabled ? 'Auto Refresh On' : 'Auto Refresh Off'}
                   </Button>
                   <Button
@@ -205,7 +205,7 @@ export function ParticipantResultsView({
                     disabled={isRefreshing}
                     className="w-full justify-start rounded-lg cursor-pointer"
                   >
-                    <ArrowsClockwise size={16} weight="bold" className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <ArrowsClockwiseIcon size={16} weight="bold" className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                     Refresh
                   </Button>
                   <AuthMenuContent onAction={() => setIsMobileMenuOpen(false)} />
@@ -237,7 +237,7 @@ export function ParticipantResultsView({
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Heart size={20} weight="fill" className="text-primary" />
+                <HeartIcon size={20} weight="fill" className="text-primary" />
               </div>
               <div>
                 <CardTitle>Results & Trends</CardTitle>
@@ -316,7 +316,7 @@ export function ParticipantResultsView({
                   size="lg"
                   className="cursor-pointer"
                 >
-                  <PaperPlaneRight size={20} weight="bold" className="mr-2" />
+                  <PaperPlaneRightIcon size={20} weight="bold" className="mr-2" />
                   Go to Voting
                 </Button>
               )}

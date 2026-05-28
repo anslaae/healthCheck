@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CircleNotch } from '@phosphor-icons/react'
+import { CircleNotchIcon } from '@phosphor-icons/react'
 
 interface PageStatusCardProps {
   icon?: ReactNode
@@ -22,7 +22,7 @@ export function PageStatusCard({ icon, title, description, loading = false, acti
         <CardHeader className="items-center text-center gap-3 pb-3">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             {loading ? (
-              <CircleNotch size={24} className="animate-spin text-primary" />
+              <CircleNotchIcon size={24} className="animate-spin text-primary" />
             ) : (
               icon
             )}

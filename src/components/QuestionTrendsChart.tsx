@@ -1,7 +1,7 @@
 import { HealthCheck } from '@/lib/types'
 import { getPaddedTimeDomain } from '@/lib/chartTimeDomain'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ChartLine } from '@phosphor-icons/react'
+import { ChartLineIcon } from '@phosphor-icons/react'
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion } from 'framer-motion'
 
@@ -52,7 +52,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <ChartLine size={20} weight="bold" className="text-primary" />
+              <ChartLineIcon size={20} weight="bold" className="text-primary" />
             </div>
             <div>
               <CardTitle>Question Trends</CardTitle>
@@ -233,7 +233,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <ChartLine size={20} weight="bold" className="text-primary" />
+                    <ChartLineIcon size={20} weight="bold" className="text-primary" />
                   </div>
                   <div className="flex-1">
                     <CardTitle>{questionText}</CardTitle>
