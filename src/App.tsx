@@ -3,10 +3,12 @@ import { HealthCheck, Vote, Team } from './lib/types'
 import { VotingView } from './components/VotingView'
 import { TeamDetailsView } from './components/TeamDetailsView'
 import { ParticipantResultsView } from './components/ParticipantResultsView'
+import { AuthMenuContent } from './components/AuthMenuContent'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
-import { Heart, Lock, Users, AlertTriangle } from 'lucide-react'
+import { Heart, Lock, Users, AlertTriangle, Menu } from 'lucide-react'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './components/ui/sheet'
 import { Toaster } from './components/ui/sonner'
 import { motion } from 'framer-motion'
 import { createTeam, fetchAppData, joinPrivateTeamByInvite, submitVotes } from './lib/dataService'
@@ -29,6 +31,7 @@ function App() {
   const [newTeamPrivate, setNewTeamPrivate] = useState(false)
   const [inviteHandled, setInviteHandled] = useState(false)
   const [isPublicTeamsExpanded, setIsPublicTeamsExpanded] = useState(true)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { session, isLoading: isAuthLoading } = useAuthSession()
   const { isRunning: isCreatingTeam, run: runCreateTeam } = useAsyncAction()
 
@@ -326,9 +329,29 @@ function App() {
     <>
       <div className="min-h-screen bg-background">
          <header className="border-b bg-card">
-           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3">
-             <Heart size={32} className="text-primary fill-primary" />
-             <h1 className="text-2xl font-bold">Team Health Check</h1>
+           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+             <div className="flex items-center gap-3 min-w-0">
+               <Heart size={32} className="text-primary fill-primary shrink-0" />
+               <h1 className="text-xl sm:text-2xl font-bold truncate">Team Health Check</h1>
+             </div>
+             <div className="md:hidden shrink-0">
+               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                 <SheetTrigger asChild>
+                   <Button variant="outline" size="icon" aria-label="Open app menu" title="Menu">
+                     <Menu size={18} />
+                     <span className="sr-only">Open menu</span>
+                   </Button>
+                 </SheetTrigger>
+                 <SheetContent side="right" className="w-[280px]">
+                   <SheetHeader>
+                     <SheetTitle>Menu</SheetTitle>
+                   </SheetHeader>
+                   <div className="mt-3 px-1">
+                     <AuthMenuContent onAction={() => setIsMobileMenuOpen(false)} className="mt-0 border-0 pt-0" />
+                   </div>
+                 </SheetContent>
+               </Sheet>
+             </div>
            </div>
          </header>
 

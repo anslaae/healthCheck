@@ -10,10 +10,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { ArrowLeft, CalendarBlank, ArrowsClockwise, ShareNetwork, Plus, Check, Trash, Eye, LockSimple, ChatCircleDots, LinkSimple } from '@phosphor-icons/react'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { ArrowLeft, CalendarBlank, ArrowsClockwise, ShareNetwork, Plus, Check, Trash, Eye, LockSimple, ChatCircleDots, LinkSimple, List } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { ParticipationChart } from './ParticipationChart'
 import { QuestionTrendsChart } from './QuestionTrendsChart'
+import { AuthMenuContent } from './AuthMenuContent'
 import { motion } from 'framer-motion'
 import { generateHealthCheckId, generateQuestionId, DEFAULT_QUESTIONS } from '@/lib/healthCheckUtils'
 import { closeHealthCheck, createHealthCheck, createPrivateTeamInvite, deleteHealthCheck, deleteTeam, updateTeamVisibility } from '@/lib/dataService'
@@ -40,6 +42,7 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
   const [newCheckName, setNewCheckName] = useState('')
   const [deletingCheckId, setDeletingCheckId] = useState<string | null>(null)
   const [isDeleteTeamDialogOpen, setIsDeleteTeamDialogOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [checkQuestions, setCheckQuestions] = useState<Array<{text: string, happyExplanation?: string, unhappyExplanation?: string}>>(
     DEFAULT_QUESTIONS.map(q => ({ text: q.question, happyExplanation: q.happy, unhappyExplanation: q.unhappy }))
   )
@@ -49,6 +52,8 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
   const sortedChecks = [...healthChecks].sort((a, b) => a.createdAt - b.createdAt)
   const isPrivateTeam = team.visibility === 'private'
   const memberCount = team.members.length
+  const canSharePrivateInvite = team.visibility !== 'private' || isMember
+  const shouldShowDeleteTeam = healthChecks.length === 0
 
   const totalQuestions = healthChecks.reduce((sum, check) => sum + check.questions.length, 0)
   const totalParticipants = healthChecks.reduce((sum, check) => {
@@ -248,22 +253,23 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
     <Dialog open={isCreatingCheck} onOpenChange={setIsCreatingCheck}>
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-start gap-3 sm:gap-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onBack} className="cursor-pointer">
+              <Button variant="ghost" size="sm" onClick={onBack} className="cursor-pointer shrink-0">
                 <ArrowLeft weight="bold" className="mr-2" />
-                Back to Teams
+                <span className="hidden sm:inline">Back to Teams</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Return to teams list</TooltipContent>
           </Tooltip>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">{team.name}</h1>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-xl font-bold truncate">{team.name}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Team Overview & Trends • {team.visibility === 'private' ? 'Private' : 'Public'}
             </p>
           </div>
+          <div className="hidden md:flex items-center justify-end gap-2 flex-wrap">
           {team.visibility === 'public' && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -289,7 +295,7 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                 variant="outline" 
                 size="sm"
                 onClick={team.visibility === 'private' ? () => { void handleCopyInviteLink() } : handleCopyTeamLink}
-                disabled={team.visibility === 'private' && (!isMember || isGeneratingInvite)}
+                disabled={team.visibility === 'private' && (!canSharePrivateInvite || isGeneratingInvite)}
                 className="cursor-pointer"
               >
                 {copiedTeamLink ? (
@@ -347,7 +353,7 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
             </TooltipTrigger>
             <TooltipContent>Refresh data</TooltipContent>
           </Tooltip>
-          {healthChecks.length === 0 && (
+          {shouldShowDeleteTeam && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -364,6 +370,105 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
               <TooltipContent>Delete this team</TooltipContent>
             </Tooltip>
           )}
+          </div>
+          <div className="md:hidden shrink-0">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="cursor-pointer" aria-label="Open team actions menu" title="Menu">
+                  <List size={18} weight="bold" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px]">
+                <SheetHeader>
+                  <SheetTitle>Team Actions</SheetTitle>
+                </SheetHeader>
+                <div className="mt-3 space-y-2 px-1">
+                  {team.visibility === 'public' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        void handleMakePrivate()
+                      }}
+                      disabled={!session.authenticated || isUpdatingVisibility}
+                      className="w-full justify-start rounded-lg cursor-pointer"
+                    >
+                      <LockSimple size={16} weight="bold" className="mr-2" />
+                      {isUpdatingVisibility ? 'Updating…' : 'Make Private'}
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (team.visibility === 'private') {
+                        void handleCopyInviteLink()
+                        return
+                      }
+                      handleCopyTeamLink()
+                    }}
+                    disabled={team.visibility === 'private' && (!canSharePrivateInvite || isGeneratingInvite)}
+                    className="w-full justify-start rounded-lg cursor-pointer"
+                  >
+                    {copiedTeamLink ? (
+                      <>
+                        <Check size={16} weight="bold" className="mr-2 text-happy" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        {team.visibility === 'private' ? <LinkSimple size={16} weight="bold" className="mr-2" /> : <ShareNetwork size={16} weight="bold" className="mr-2" />}
+                        {team.visibility === 'private' ? 'Invite Link' : 'Share'}
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      setIsCreatingCheck(true)
+                    }}
+                    disabled={isSubmitting}
+                    className="w-full justify-start rounded-lg cursor-pointer"
+                  >
+                    <Plus size={16} weight="bold" className="mr-2" />
+                    New Check
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      void handleRefresh()
+                    }}
+                    disabled={isRefreshing}
+                    className="w-full justify-start rounded-lg cursor-pointer"
+                  >
+                    <ArrowsClockwise
+                      size={16}
+                      weight="bold"
+                      className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`}
+                    />
+                    Refresh
+                  </Button>
+                  {shouldShowDeleteTeam && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        setIsDeleteTeamDialogOpen(true)
+                      }}
+                      disabled={isDeletingTeam}
+                      className="w-full justify-start rounded-lg cursor-pointer text-destructive hover:text-destructive"
+                    >
+                      <Trash size={16} weight="bold" className="mr-2" />
+                      Delete Team
+                    </Button>
+                  )}
+                  <AuthMenuContent onAction={() => setIsMobileMenuOpen(false)} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
       

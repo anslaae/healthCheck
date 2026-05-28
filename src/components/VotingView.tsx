@@ -4,8 +4,10 @@ import { VoteButton } from './VoteButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ParticipantResultsView } from './ParticipantResultsView'
-import { ArrowLeft, Heart, PaperPlaneRight } from '@phosphor-icons/react'
+import { ArrowLeft, Heart, PaperPlaneRight, List } from '@phosphor-icons/react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { AuthMenuContent } from './AuthMenuContent'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useAsyncAction } from '@/hooks/useAsyncAction'
@@ -30,6 +32,7 @@ export function VotingView({
   const [votes, setVotes] = useState<Record<string, VoteType>>({})
   const [submitted, setSubmitted] = useState(false)
   const [submittedVotes, setSubmittedVotes] = useState<Record<string, VoteType>>({})
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { isRunning: isSubmitting, run: runSubmit } = useAsyncAction()
 
   const handleVote = (questionId: string, voteType: VoteType) => {
@@ -91,6 +94,52 @@ export function VotingView({
 
    return (
      <div className="min-h-screen bg-background">
+      <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer shrink-0">
+                <ArrowLeft weight="bold" className="mr-2" />
+                <span className="hidden sm:inline">Back to Team Overview</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Return to team overview</TooltipContent>
+          </Tooltip>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-xl font-bold truncate">{healthCheck.name}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Voting</p>
+          </div>
+          <div className="md:hidden shrink-0">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="cursor-pointer" aria-label="Open voting menu" title="Menu">
+                  <List size={18} weight="bold" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px]">
+                <SheetHeader>
+                  <SheetTitle>Voting Actions</SheetTitle>
+                </SheetHeader>
+                <div className="mt-3 space-y-2 px-1">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      onBackToTeam()
+                    }}
+                    className="w-full justify-start rounded-lg cursor-pointer"
+                  >
+                    <ArrowLeft size={16} weight="bold" className="mr-2" />
+                    Back to Team Overview
+                  </Button>
+                  <AuthMenuContent onAction={() => setIsMobileMenuOpen(false)} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </header>
       <div className="max-w-4xl mx-auto p-6 md:p-8 space-y-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -115,18 +164,6 @@ export function VotingView({
           </Card>
         </motion.div>
 
-        <div className="flex justify-start">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer">
-                <ArrowLeft weight="bold" className="mr-2" />
-                Back to Team Overview
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Return to team overview</TooltipContent>
-          </Tooltip>
-        </div>
-        
         <div className="bg-secondary rounded-full h-2 overflow-hidden">
           <motion.div
             className="h-full bg-primary"

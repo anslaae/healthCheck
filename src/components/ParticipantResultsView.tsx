@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Heart, ArrowsClockwise, CheckCircle, PaperPlaneRight } from '@phosphor-icons/react'
+import { ArrowLeft, Heart, ArrowsClockwise, CheckCircle, PaperPlaneRight, List } from '@phosphor-icons/react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { getResultsWithTrends } from '@/lib/healthCheckUtils'
 import { ResultsChart } from './ResultsChart'
 import { TrendIndicator } from './TrendIndicator'
+import { AuthMenuContent } from './AuthMenuContent'
 import { motion } from 'framer-motion'
 
 interface ParticipantResultsViewProps {
@@ -32,6 +34,7 @@ export function ParticipantResultsView({
 }: ParticipantResultsViewProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const currentIndex = allHealthChecks.findIndex(c => c.id === healthCheck.id)
   const previousChecks = currentIndex > 0 ? allHealthChecks.slice(0, currentIndex) : []
@@ -80,26 +83,26 @@ export function ParticipantResultsView({
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-start gap-3 sm:gap-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer">
+              <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer shrink-0">
                 <ArrowLeft weight="bold" className="mr-2" />
-                Back to Team Overview
+                <span className="hidden sm:inline">Back to Team Overview</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Return to team overview</TooltipContent>
           </Tooltip>
-          <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 rounded-full bg-happy/20 flex items-center justify-center">
               <CheckCircle size={20} weight="fill" className="text-happy" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold">{healthCheck.name}</h1>
-              <p className="text-sm text-muted-foreground">Results & Trends</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold truncate">{healthCheck.name}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Results & Trends</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2 flex-wrap justify-end">
             {healthCheck.status !== 'closed' && onGoToVoting && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -155,6 +158,60 @@ export function ParticipantResultsView({
               </TooltipTrigger>
               <TooltipContent>Refresh data</TooltipContent>
             </Tooltip>
+          </div>
+          <div className="md:hidden shrink-0">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="cursor-pointer" aria-label="Open results actions menu" title="Menu">
+                  <List size={18} weight="bold" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px]">
+                <SheetHeader>
+                  <SheetTitle>Results Actions</SheetTitle>
+                </SheetHeader>
+                <div className="mt-3 space-y-2 px-1">
+                  {healthCheck.status !== 'closed' && onGoToVoting && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        onGoToVoting()
+                      }}
+                      className="w-full justify-start rounded-lg cursor-pointer"
+                    >
+                      <PaperPlaneRight size={16} weight="bold" className="mr-2" />
+                      Go to Voting
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      setAutoRefreshEnabled((enabled) => !enabled)
+                    }}
+                    className="w-full justify-start rounded-lg cursor-pointer"
+                  >
+                    <ArrowsClockwise size={16} weight="bold" className={`mr-2 ${autoRefreshEnabled ? 'text-primary' : ''}`} />
+                    {autoRefreshEnabled ? 'Auto Refresh On' : 'Auto Refresh Off'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      void handleRefresh()
+                    }}
+                    disabled={isRefreshing}
+                    className="w-full justify-start rounded-lg cursor-pointer"
+                  >
+                    <ArrowsClockwise size={16} weight="bold" className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                  <AuthMenuContent onAction={() => setIsMobileMenuOpen(false)} />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
