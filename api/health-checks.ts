@@ -7,13 +7,27 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { canManagePrivateTeam, getAuthSession } from './_authz.js'
 import { readData, writeData } from './_store.js'
 import type { HealthCheck } from './_store.js'
+import { asObject, getStringField } from './_validation.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'POST') {
-    const check = req.body as HealthCheck
+    const check = asObject(req.body) as HealthCheck | null
 
     if (!check?.id || !check?.teamId || !check?.name) {
       res.status(400).json({ error: 'Invalid health check payload' })
+      return
+    }
+
+    if (!Array.isArray(check.questions) || check.questions.length === 0) {
+      res.status(400).json({ error: 'Health check must include at least one question' })
+      return
+    }
+
+    const hasInvalidQuestion = check.questions.some(
+      (question) => !question?.id || typeof question.text !== 'string'
+    )
+    if (hasInvalidQuestion) {
+      res.status(400).json({ error: 'Invalid question payload' })
       return
     }
 
@@ -32,6 +46,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return
       }
 
+      if (data.healthChecks.some((existing) => existing.id === check.id)) {
+        res.status(409).json({ error: 'Health check already exists' })
+        return
+      }
+
       data.healthChecks.push(check)
       await writeData(data)
       res.status(201).json({ success: true })
@@ -43,7 +62,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   if (req.method === 'DELETE') {
-    const { checkId } = req.body as { checkId?: string }
+    const body = asObject(req.body)
+    const checkId = getStringField(body, 'checkId')
 
     if (!checkId) {
       res.status(400).json({ error: 'checkId is required' })

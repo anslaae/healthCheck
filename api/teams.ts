@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { canManagePrivateTeam, getAuthSession } from './_authz.js'
 import { readData, writeData } from './_store.js'
+import { asObject, getStringField, getUnionField } from './_validation.js'
 import type { Team } from './_store.js'
 
 type CreateTeamInput = {
@@ -74,7 +75,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
 
-    const { teamId, visibility } = req.body as { teamId?: string; visibility?: 'public' | 'private' }
+    const body = asObject(req.body)
+    const teamId = getStringField(body, 'teamId')
+    const visibility = getUnionField(body, 'visibility', ['public', 'private'] as const)
 
     if (!teamId || (visibility !== 'public' && visibility !== 'private')) {
       res.status(400).json({ error: 'teamId and visibility are required' })
@@ -119,7 +122,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   if (req.method === 'DELETE') {
-    const { teamId } = req.body as { teamId: string }
+    const body = asObject(req.body)
+    const teamId = getStringField(body, 'teamId')
 
     if (!teamId) {
       res.status(400).json({ error: 'teamId is required' })

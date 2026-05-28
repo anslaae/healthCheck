@@ -132,7 +132,11 @@ function App() {
   const handleBackToTeamFromCheck = (teamIdToOpen: string) => {
     window.location.href = `${window.location.origin}?team=${teamIdToOpen}`
   }
-  
+
+  const handleOpenTeam = (teamIdToOpen: string) => {
+    window.location.href = `?team=${teamIdToOpen}`
+  }
+
   const handleRefresh = async () => {
     setIsLoading(true)
 
@@ -210,8 +214,17 @@ function App() {
           transition={{ delay: index * 0.05 }}
         >
           <Card
-            className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => window.location.href = `?team=${team.id}`}
+            role="link"
+            tabIndex={0}
+            aria-label={`Open team ${team.name}`}
+            className="hover:shadow-lg transition-shadow cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            onClick={() => handleOpenTeam(team.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                handleOpenTeam(team.id)
+              }
+            }}
           >
             <CardHeader>
               <div className="flex items-center gap-3">

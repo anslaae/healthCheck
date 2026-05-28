@@ -6,6 +6,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { canManagePrivateTeam, getAuthSession } from './_authz.js'
 import { readData, writeData } from './_store.js'
+import { asObject, getStringField } from './_validation.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -13,7 +14,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  const { checkId } = req.body as { checkId: string }
+  const body = asObject(req.body)
+  const checkId = getStringField(body, 'checkId')
 
   if (!checkId) {
     res.status(400).json({ error: 'checkId is required' })

@@ -24,13 +24,8 @@ export function useAuthSession() {
   }, [refreshSession])
 
   const signOut = useCallback(async () => {
-    try {
-      await logout()
-      setSession({ authenticated: false })
-    } catch (error) {
-      // Preserve local auth state if server logout failed.
-      throw error
-    }
+    await logout()
+    setSession({ authenticated: false })
   }, [])
 
   return {

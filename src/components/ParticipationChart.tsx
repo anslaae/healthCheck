@@ -8,13 +8,32 @@ interface ParticipationChartProps {
   healthChecks: HealthCheck[]
 }
 
+type ParticipationChartPoint = {
+  name: string
+  date: number
+  formattedDate: string
+  fullDate: string
+  participants: number
+  isActive: boolean
+}
+
+type TooltipPayloadItem = {
+  value: number
+  payload: ParticipationChartPoint
+}
+
+type CustomTooltipProps = {
+  active?: boolean
+  payload?: TooltipPayloadItem[]
+}
+
 const CLOSED_COLOR = 'var(--primary)'
 const ACTIVE_COLOR = 'var(--muted-foreground)'
 
 export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
   const sortedChecks = [...healthChecks].sort((a, b) => a.createdAt - b.createdAt)
   
-  const chartData = sortedChecks.map((check) => {
+  const chartData: ParticipationChartPoint[] = sortedChecks.map((check) => {
     const uniqueVoters = check.questions.length > 0
       ? Math.ceil(check.votes.length / check.questions.length)
       : 0
@@ -42,7 +61,7 @@ export function ParticipationChart({ healthChecks }: ParticipationChartProps) {
 
   const xDomain = getPaddedTimeDomain(sortedChecks.map((check) => check.createdAt))
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       const d = payload[0].payload
       return (

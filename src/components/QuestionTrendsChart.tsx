@@ -23,6 +23,21 @@ interface TrendDataPoint {
   chartData: TrendDataPoint[] | null
 }
 
+type TrendTooltipPayloadItem = {
+  payload: TrendDataPoint
+}
+
+type TrendTooltipProps = {
+  active?: boolean
+  payload?: TrendTooltipPayloadItem[]
+}
+
+type YAxisTickProps = {
+  x: number
+  y: number
+  payload: { value: number }
+}
+
 const LINE_COLOR = 'oklch(0.646 0.222 41.116)'
 
 export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) {
@@ -72,7 +87,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
     })
   }
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: TrendTooltipProps) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       const dataIndex = payload[0].payload.dataIndex
@@ -129,7 +144,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
     <div className="space-y-6">
       {questionList.map((questionText, questionIndex) => {
         const questionData = questionMap.get(questionText)
-        const customYAxisTick = ({ x, y, payload }: any) => {
+        const customYAxisTick = ({ x, y, payload }: YAxisTickProps) => {
           let emoji = ''
           let explanation: string | undefined
 
@@ -195,7 +210,7 @@ export function QuestionTrendsChart({ healthChecks }: QuestionTrendsChartProps) 
             unhappy,
             total,
             dataIndex: idx,
-            chartData: null as any
+            chartData: null
           }
         })
         

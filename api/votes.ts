@@ -7,6 +7,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { canViewTeam, getAuthSession } from './_authz.js'
 import { readData, writeData } from './_store.js'
 import type { Vote } from './_store.js'
+import { asObject, getStringField, isVote } from './_validation.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -14,10 +15,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  const { healthCheckId, votes } = req.body as { healthCheckId: string; votes: Vote[] }
+  const body = asObject(req.body)
+  const healthCheckId = getStringField(body, 'healthCheckId')
+  const votes = Array.isArray(body?.votes) ? (body.votes as Vote[]) : undefined
 
-  if (!healthCheckId || !Array.isArray(votes)) {
+  if (!healthCheckId || !votes) {
     res.status(400).json({ error: 'healthCheckId and votes array are required' })
+    return
+  }
+
+  const hasInvalidVote = votes.some((vote) => !isVote(vote))
+
+  if (hasInvalidVote) {
+    res.status(400).json({ error: 'Invalid vote payload' })
     return
   }
 
@@ -44,6 +54,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     if (check.status !== 'active') {
       res.status(400).json({ error: 'Health check is closed' })
+      return
+    }
+
+    const validQuestionIds = new Set(check.questions.map((question) => question.id))
+    if (votes.some((vote) => !validQuestionIds.has(vote.questionId))) {
+      res.status(400).json({ error: 'Votes include unknown question ids' })
       return
     }
 

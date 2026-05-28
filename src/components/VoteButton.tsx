@@ -31,6 +31,8 @@ export function VoteButton({ voteType, selected, onClick, disabled }: VoteButton
         type="button"
         onClick={onClick}
         disabled={disabled}
+        aria-pressed={selected}
+        aria-label={`Vote ${labels[voteType]}`}
         className={cn(
           'w-full h-24 flex flex-col items-center justify-center gap-2 text-lg font-medium transition-all',
           colorClass,

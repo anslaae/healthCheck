@@ -3,19 +3,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getAuthSession, isTeamMember } from './_authz.js'
 import { resolveAppOrigin } from './auth/_session.js'
 import { readData, writeData } from './_store.js'
+import { asObject, getStringField, getUnionField } from './_validation.js'
 
 function generateInviteCode(): string {
   return randomBytes(18).toString('base64url')
-}
-
-type CreateInviteBody = {
-  action: 'createInvite'
-  teamId?: string
-}
-
-type JoinInviteBody = {
-  action: 'joinByInvite'
-  inviteCode?: string
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -30,10 +21,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  const body = req.body as CreateInviteBody | JoinInviteBody
+  const body = asObject(req.body)
+  const action = getUnionField(body, 'action', ['createInvite', 'joinByInvite'] as const)
 
-  if (body.action === 'createInvite') {
-    const { teamId } = body
+  if (action === 'createInvite') {
+    const teamId = getStringField(body, 'teamId')
 
     if (!teamId) {
       res.status(400).json({ error: 'teamId is required' })
@@ -72,8 +64,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (body.action === 'joinByInvite') {
-    const { inviteCode } = body
+  if (action === 'joinByInvite') {
+    const inviteCode = getStringField(body, 'inviteCode')
 
     if (!inviteCode) {
       res.status(400).json({ error: 'inviteCode is required' })

@@ -53,7 +53,7 @@ export function AuthMenu() {
               variant="outline"
               size="icon"
               className="rounded-full bg-background/90 backdrop-blur-sm cursor-pointer"
-              aria-label="User menu"
+              aria-label={`User menu for ${session.user.name}`}
             >
               <Avatar className="size-7">
                 <AvatarImage src={session.user.avatarUrl} alt={session.user.name} />
