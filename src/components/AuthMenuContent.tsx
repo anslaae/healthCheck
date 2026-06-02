@@ -1,11 +1,12 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { loginWithGithub } from '@/lib/authService'
-import { shouldRedirectToOverviewAfterLogout } from '@/lib/logoutRedirect'
 import { cn } from '@/lib/utils'
 import { GithubLogoIcon, SignInIcon, SignOutIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { LogoutOverlay } from './LogoutOverlay'
 
 interface AuthMenuContentProps {
   onAction?: () => void
@@ -30,70 +31,72 @@ function initialsFromName(name: string): string {
 
 export function AuthMenuContent({ onAction, className }: AuthMenuContentProps) {
   const { session, isLoading, signOut } = useAuthSession()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const returnTo = window.location.pathname + window.location.search
 
   const handleSignOut = async () => {
     try {
-      const shouldRedirect = await shouldRedirectToOverviewAfterLogout()
+      setIsLoggingOut(true)
       await signOut()
-      if (shouldRedirect) {
-        window.location.href = '/'
-        onAction?.()
-        return
-      }
 
-      toast.success('Signed out')
-      onAction?.()
+      // Always redirect to home after logout, with a fresh page load
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 2000)
     } catch (error) {
       console.error('Failed to sign out', error)
       toast.error('Could not sign out. Please try again.')
+      setIsLoggingOut(false)
     }
   }
 
   return (
-    <div className={cn('space-y-3 border-t pt-3 mt-3 px-1', className)}>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Account</p>
-      {session.authenticated ? (
-        <>
-          <div className="rounded-lg border bg-muted/30 px-3 py-3">
-            <div className="flex items-center gap-3">
-              <Avatar className="size-9 border bg-background">
-                <AvatarImage src={session.user.avatarUrl} alt={session.user.name} />
-                <AvatarFallback>{initialsFromName(session.user.name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium leading-none">{session.user.name}</p>
-                <p className="mt-1 truncate text-xs text-muted-foreground">@{session.user.login}</p>
+    <>
+      <LogoutOverlay isVisible={isLoggingOut} />
+      <div className={cn('space-y-3 border-t pt-3 mt-3 px-1', className)}>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Account</p>
+        {session.authenticated ? (
+          <>
+            <div className="rounded-lg border bg-muted/30 px-3 py-3">
+              <div className="flex items-center gap-3">
+                <Avatar className="size-9 border bg-background">
+                  <AvatarImage src={session.user.avatarUrl} alt={session.user.name} />
+                  <AvatarFallback>{initialsFromName(session.user.name)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium leading-none">{session.user.name}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">@{session.user.login}</p>
+                </div>
               </div>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => { void handleSignOut() }}
+              className="w-full justify-start rounded-lg gap-2 cursor-pointer"
+            >
+              <SignOutIcon size={16} weight="bold" />
+              Sign out
+            </Button>
+          </>
+        ) : (
+          <div className="rounded-lg border bg-muted/30 px-3 py-3 space-y-3">
+            <p className="text-sm text-muted-foreground">Sign in to create private teams, manage members, and share invite links.</p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                loginWithGithub(returnTo)
+                onAction?.()
+              }}
+              disabled={isLoading}
+              className="w-full justify-start rounded-lg gap-2 cursor-pointer"
+            >
+              {isLoading ? <SignInIcon size={16} className="animate-pulse" /> : <GithubLogoIcon size={16} weight="fill" />}
+              {isLoading ? 'Checking session…' : 'Sign in with GitHub'}
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => { void handleSignOut() }}
-            className="w-full justify-start rounded-lg gap-2 cursor-pointer"
-          >
-            <SignOutIcon size={16} weight="bold" />
-            Sign out
-          </Button>
-        </>
-      ) : (
-        <div className="rounded-lg border bg-muted/30 px-3 py-3 space-y-3">
-          <p className="text-sm text-muted-foreground">Sign in to create private teams, manage members, and share invite links.</p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              loginWithGithub(returnTo)
-              onAction?.()
-            }}
-            disabled={isLoading}
-            className="w-full justify-start rounded-lg gap-2 cursor-pointer"
-          >
-            {isLoading ? <SignInIcon size={16} className="animate-pulse" /> : <GithubLogoIcon size={16} weight="fill" />}
-            {isLoading ? 'Checking session…' : 'Sign in with GitHub'}
-          </Button>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   )
 }
 

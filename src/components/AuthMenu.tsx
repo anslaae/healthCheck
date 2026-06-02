@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -10,9 +11,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { loginWithGithub } from '@/lib/authService'
-import { shouldRedirectToOverviewAfterLogout } from '@/lib/logoutRedirect'
 import { GithubLogoIcon, SignInIcon, SignOutIcon, UserCircleIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { LogoutOverlay } from './LogoutOverlay'
 
 function initialsFromName(name: string): string {
   const parts = name
@@ -32,85 +33,89 @@ function initialsFromName(name: string): string {
 
 export function AuthMenu() {
   const { session, isLoading, signOut } = useAuthSession()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const returnTo = window.location.pathname + window.location.search
 
   const handleSignOut = async () => {
     try {
-      const shouldRedirect = await shouldRedirectToOverviewAfterLogout()
+      setIsLoggingOut(true)
       await signOut()
-      if (shouldRedirect) {
-        window.location.href = '/'
-        return
-      }
 
-      toast.success('Signed out')
+      // Always redirect to home after logout, with a fresh page load
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 2000)
     } catch (error) {
       console.error('Failed to sign out', error)
       toast.error('Could not sign out. Please try again.')
+      setIsLoggingOut(false)
     }
   }
 
   return (
-    <div className="hidden md:block fixed top-4 right-4 z-50">
-      {session.authenticated ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full bg-background/90 backdrop-blur-sm cursor-pointer"
-              aria-label={`User menu for ${session.user.name}`}
-            >
-              <Avatar className="size-7">
-                <AvatarImage src={session.user.avatarUrl} alt={session.user.name} />
-                <AvatarFallback>{initialsFromName(session.user.name)}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="space-y-0.5">
-              <div className="text-sm font-medium leading-none">{session.user.name}</div>
-              <div className="text-xs text-muted-foreground">@{session.user.login}</div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { void handleSignOut() }} className="cursor-pointer">
-              <SignOutIcon size={16} weight="bold" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full bg-background/90 backdrop-blur-sm cursor-pointer"
-              aria-label={isLoading ? 'Loading authentication state' : 'Sign in'}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <UserCircleIcon size={20} className="animate-pulse" />
-              ) : (
-                <SignInIcon size={20} weight="bold" />
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Sign in with</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => loginWithGithub(returnTo)}
-              className="cursor-pointer"
-              disabled={isLoading}
-            >
-              <GithubLogoIcon size={16} weight="fill" />
-              GitHub
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
+    <>
+      <LogoutOverlay isVisible={isLoggingOut} />
+      <div className="hidden md:block fixed top-4 right-4 z-50">
+        {session.authenticated ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full bg-background/90 backdrop-blur-sm cursor-pointer"
+                aria-label={`User menu for ${session.user.name}`}
+              >
+                <Avatar className="size-7">
+                  <AvatarImage src={session.user.avatarUrl} alt={session.user.name} />
+                  <AvatarFallback>{initialsFromName(session.user.name)}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="space-y-0.5">
+                <div className="text-sm font-medium leading-none">{session.user.name}</div>
+                <div className="text-xs text-muted-foreground">@{session.user.login}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => { void handleSignOut() }} className="cursor-pointer">
+                <SignOutIcon size={16} weight="bold" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full bg-background/90 backdrop-blur-sm cursor-pointer"
+                aria-label={isLoading ? 'Loading authentication state' : 'Sign in'}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <UserCircleIcon size={20} className="animate-pulse" />
+                ) : (
+                  <SignInIcon size={20} weight="bold" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Sign in with</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => loginWithGithub(returnTo)}
+                className="cursor-pointer"
+                disabled={isLoading}
+              >
+                <GithubLogoIcon size={16} weight="fill" />
+                GitHub
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </>
   )
 }
