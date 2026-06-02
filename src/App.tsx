@@ -446,41 +446,42 @@ function App() {
 
         <main className="max-w-7xl mx-auto p-6 md:p-8">
           <div className="space-y-6">
-            <div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                Team Health Check helps teams collect anonymous pulse feedback and track trends over time. Sign in to create and manage your own teams.
+              </p>
               <h2 className="text-2xl font-bold">Teams</h2>
-              <p className="text-muted-foreground">Browse teams and create new ones</p>
             </div>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Input
-                    value={newTeamName}
-                    onChange={(event) => setNewTeamName(event.target.value)}
-                    placeholder="New team name"
-                    disabled={isCreatingTeam}
-                  />
-                  <Button onClick={handleCreateTeam} disabled={!newTeamName.trim() || isCreatingTeam || !session.authenticated}>
-                    {isCreatingTeam ? 'Creating…' : 'Create Team'}
-                  </Button>
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <Checkbox
-                    id="new-team-private"
-                    checked={newTeamPrivate}
-                    disabled={!session.authenticated || isCreatingTeam}
-                    onCheckedChange={(checked) => setNewTeamPrivate(Boolean(checked))}
-                  />
-                   <Label htmlFor="new-team-private" className="flex items-center gap-2 text-sm">
-                     <Lock size={14} />
-                     Private team (members only)
-                   </Label>
-                </div>
-                {!session.authenticated && !isAuthLoading && (
-                  <p className="mt-3 text-sm text-muted-foreground">Sign in to create teams or make teams private.</p>
-                )}
-              </CardContent>
-            </Card>
+            {session.authenticated && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input
+                      value={newTeamName}
+                      onChange={(event) => setNewTeamName(event.target.value)}
+                      placeholder="New team name"
+                      disabled={isCreatingTeam}
+                    />
+                    <Button onClick={handleCreateTeam} disabled={!newTeamName.trim() || isCreatingTeam}>
+                      {isCreatingTeam ? 'Creating…' : 'Create Team'}
+                    </Button>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <Checkbox
+                      id="new-team-private"
+                      checked={newTeamPrivate}
+                      disabled={isCreatingTeam}
+                      onCheckedChange={(checked) => setNewTeamPrivate(Boolean(checked))}
+                    />
+                     <Label htmlFor="new-team-private" className="flex items-center gap-2 text-sm">
+                       <Lock size={14} />
+                       Private team (members only)
+                     </Label>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {isLoading ? (
               <Card>
@@ -547,7 +548,7 @@ function App() {
                     <CardContent className="py-12 text-center">
                       <Users size={48} className="mx-auto mb-4 text-muted-foreground" />
                       <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
-                      <p className="text-muted-foreground">Create your first team above</p>
+                      <p className="text-muted-foreground">Sign in to create your first team</p>
                     </CardContent>
                   </Card>
                 ) : (

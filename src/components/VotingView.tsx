@@ -98,9 +98,15 @@ export function VotingView({
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer shrink-0">
-                <ArrowLeftIcon weight="bold" className="mr-2" />
-                <span className="hidden sm:inline">Back to Team Overview</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onBackToTeam}
+                className="cursor-pointer shrink-0"
+                aria-label="Back to team overview"
+                title="Back to team overview"
+              >
+                <ArrowLeftIcon weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Return to team overview</TooltipContent>
@@ -129,6 +135,8 @@ export function VotingView({
                       onBackToTeam()
                     }}
                     className="w-full justify-start rounded-lg cursor-pointer"
+                    aria-label="Back to team overview"
+                    title="Back to team overview"
                   >
                     <ArrowLeftIcon size={16} weight="bold" className="mr-2" />
                     Back to Team Overview
@@ -242,12 +250,13 @@ export function VotingView({
         <div className="sticky bottom-6 pt-6">
           <Button
             onClick={handleSubmit}
-            size="lg"
-            className="w-full md:w-auto md:min-w-64 mx-auto flex shadow-lg text-lg h-14 cursor-pointer"
+            size="icon"
+            className="mx-auto flex shadow-lg cursor-pointer"
             disabled={Object.keys(votes).length !== healthCheck.questions.length || isSubmitting}
+            aria-label={isSubmitting ? 'Submitting feedback' : 'Submit feedback'}
+            title={isSubmitting ? 'Submitting feedback' : 'Submit feedback'}
           >
-            <PaperPlaneRightIcon size={20} weight="bold" className="mr-2" />
-            {isSubmitting ? 'Submitting…' : 'Submit Feedback'}
+            <PaperPlaneRightIcon size={20} weight="bold" className={isSubmitting ? 'animate-pulse' : ''} />
           </Button>
         </div>
       </div>

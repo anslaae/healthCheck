@@ -92,6 +92,7 @@ export function AuthMenu() {
                 size="icon"
                 className="rounded-full bg-background/90 backdrop-blur-sm cursor-pointer"
                 aria-label={isLoading ? 'Loading authentication state' : 'Sign in'}
+                title={isLoading ? 'Loading authentication state' : 'Sign in'}
                 disabled={isLoading}
               >
                 {isLoading ? (

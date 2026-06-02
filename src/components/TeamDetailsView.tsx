@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { ArrowLeftIcon, CalendarBlankIcon, ArrowsClockwiseIcon, ShareNetworkIcon, PlusIcon, CheckIcon, TrashIcon, EyeIcon, LockSimpleIcon, ChatCircleDotsIcon, LinkSimpleIcon, ListIcon } from '@phosphor-icons/react'
+import { ArrowLeftIcon, CalendarBlankIcon, ArrowsClockwiseIcon, ShareNetworkIcon, PlusIcon, CheckIcon, TrashIcon, EyeIcon, LockSimpleIcon, ChatCircleDotsIcon, LinkSimpleIcon, ListIcon, XIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { ParticipationChart } from './ParticipationChart'
 import { QuestionTrendsChart } from './QuestionTrendsChart'
@@ -256,9 +256,15 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-start gap-3 sm:gap-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onBack} className="cursor-pointer shrink-0">
-                <ArrowLeftIcon weight="bold" className="mr-2" />
-                <span className="hidden sm:inline">Back to Teams</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onBack}
+                className="cursor-pointer shrink-0"
+                aria-label="Back to teams"
+                title="Back to teams"
+              >
+                <ArrowLeftIcon weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Return to teams list</TooltipContent>
@@ -275,13 +281,14 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => { void handleMakePrivate() }}
                   disabled={!session.authenticated || isUpdatingVisibility}
                   className="cursor-pointer"
+                  aria-label={isUpdatingVisibility ? 'Updating team visibility' : 'Make private'}
+                  title={isUpdatingVisibility ? 'Updating team visibility' : 'Make private'}
                 >
-                  <LockSimpleIcon size={16} weight="bold" className="mr-2" />
-                  {isUpdatingVisibility ? 'Updating…' : 'Make Private'}
+                  <LockSimpleIcon size={16} weight="bold" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -293,21 +300,17 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
             <TooltipTrigger asChild>
               <Button 
                 variant="outline" 
-                size="sm"
+                size="icon"
                 onClick={team.visibility === 'private' ? () => { void handleCopyInviteLink() } : handleCopyTeamLink}
                 disabled={team.visibility === 'private' && (!canSharePrivateInvite || isGeneratingInvite)}
                 className="cursor-pointer"
+                aria-label={copiedTeamLink ? 'Copied' : team.visibility === 'private' ? 'Copy invite link' : 'Copy team link'}
+                title={copiedTeamLink ? 'Copied' : team.visibility === 'private' ? 'Copy invite link' : 'Copy team link'}
               >
                 {copiedTeamLink ? (
-                  <>
-                    <CheckIcon size={16} weight="bold" className="mr-2 text-happy" />
-                    Copied
-                  </>
+                  <CheckIcon size={16} weight="bold" className="text-happy" />
                 ) : (
-                  <>
-                    {team.visibility === 'private' ? <LinkSimpleIcon size={16} weight="bold" className="mr-2" /> : <ShareNetworkIcon size={16} weight="bold" className="mr-2" />}
-                    {team.visibility === 'private' ? 'Invite Link' : 'Share'}
-                  </>
+                  team.visibility === 'private' ? <LinkSimpleIcon size={16} weight="bold" /> : <ShareNetworkIcon size={16} weight="bold" />
                 )}
               </Button>
             </TooltipTrigger>
@@ -323,13 +326,14 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
             <TooltipTrigger asChild>
               <Button 
                 variant="outline" 
-                size="sm"
+                size="icon"
                 onClick={() => setIsCreatingCheck(true)}
                 disabled={isSubmitting}
                 className="cursor-pointer"
+                aria-label="Create new health check"
+                title="Create new health check"
               >
-                <PlusIcon size={16} weight="bold" className="mr-2" />
-                New Check
+                <PlusIcon size={16} weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Create a new health check</TooltipContent>
@@ -338,17 +342,18 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
             <TooltipTrigger asChild>
               <Button 
                 variant="outline" 
-                size="sm"
+                size="icon"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 className="cursor-pointer"
+                aria-label="Refresh data"
+                title="Refresh data"
               >
                 <ArrowsClockwiseIcon 
                   size={16} 
                   weight="bold" 
-                  className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`}
+                  className={isRefreshing ? 'animate-spin' : ''}
                 />
-                Refresh
               </Button>
             </TooltipTrigger>
             <TooltipContent>Refresh data</TooltipContent>
@@ -358,13 +363,14 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setIsDeleteTeamDialogOpen(true)}
                   disabled={isDeletingTeam}
                   className="cursor-pointer text-destructive hover:text-destructive"
+                  aria-label="Delete team"
+                  title="Delete team"
                 >
-                  <TrashIcon size={16} weight="bold" className="mr-2" />
-                  Delete Team
+                  <TrashIcon size={16} weight="bold" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Delete this team</TooltipContent>
@@ -393,6 +399,8 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                       }}
                       disabled={!session.authenticated || isUpdatingVisibility}
                       className="w-full justify-start rounded-lg cursor-pointer"
+                      aria-label={isUpdatingVisibility ? 'Updating team visibility' : 'Make private'}
+                      title={isUpdatingVisibility ? 'Updating team visibility' : 'Make private'}
                     >
                       <LockSimpleIcon size={16} weight="bold" className="mr-2" />
                       {isUpdatingVisibility ? 'Updating…' : 'Make Private'}
@@ -409,6 +417,8 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                     }}
                     disabled={team.visibility === 'private' && (!canSharePrivateInvite || isGeneratingInvite)}
                     className="w-full justify-start rounded-lg cursor-pointer"
+                    aria-label={copiedTeamLink ? 'Copied' : team.visibility === 'private' ? 'Copy invite link' : 'Copy team link'}
+                    title={copiedTeamLink ? 'Copied' : team.visibility === 'private' ? 'Copy invite link' : 'Copy team link'}
                   >
                     {copiedTeamLink ? (
                       <>
@@ -417,8 +427,10 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                       </>
                     ) : (
                       <>
-                        {team.visibility === 'private' ? <LinkSimpleIcon size={16} weight="bold" className="mr-2" /> : <ShareNetworkIcon size={16} weight="bold" className="mr-2" />}
-                        {team.visibility === 'private' ? 'Invite Link' : 'Share'}
+                        {team.visibility === 'private'
+                          ? <LinkSimpleIcon size={16} weight="bold" className="mr-2" />
+                          : <ShareNetworkIcon size={16} weight="bold" className="mr-2" />}
+                        {team.visibility === 'private' ? 'Invite Link' : 'Copy Team Link'}
                       </>
                     )}
                   </Button>
@@ -430,6 +442,8 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                     }}
                     disabled={isSubmitting}
                     className="w-full justify-start rounded-lg cursor-pointer"
+                    aria-label="Create new health check"
+                    title="Create new health check"
                   >
                     <PlusIcon size={16} weight="bold" className="mr-2" />
                     New Check
@@ -442,6 +456,8 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                     }}
                     disabled={isRefreshing}
                     className="w-full justify-start rounded-lg cursor-pointer"
+                    aria-label="Refresh data"
+                    title="Refresh data"
                   >
                     <ArrowsClockwiseIcon
                       size={16}
@@ -459,6 +475,8 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                       }}
                       disabled={isDeletingTeam}
                       className="w-full justify-start rounded-lg cursor-pointer text-destructive hover:text-destructive"
+                      aria-label="Delete team"
+                      title="Delete team"
                     >
                       <TrashIcon size={16} weight="bold" className="mr-2" />
                       Delete Team
@@ -573,9 +591,10 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                   onClick={() => setIsDeleteTeamDialogOpen(true)}
                   disabled={isDeletingTeam}
                   className="cursor-pointer text-destructive hover:text-destructive"
+                  aria-label="Delete team"
+                  title="Delete team"
                 >
-                  <Trash weight="bold" className="mr-2" />
-                  Delete Team
+                  <TrashIcon weight="bold" />
                 </Button>
               </div>
             ) : (
@@ -616,9 +635,11 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="outline"
-                                  size="sm"
+                                  size="icon"
                                   onClick={(e) => handleGoToVoting(check.id, e)}
                                   className="cursor-pointer"
+                                  aria-label="Go to voting"
+                                  title="Go to voting"
                                 >
                                     <ChatCircleDotsIcon size={16} weight="bold" />
                                 </Button>
@@ -631,10 +652,12 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="outline"
-                                  size="sm"
+                                  size="icon"
                                   onClick={(e) => handleCloseCheck(check.id, e)}
                                   disabled={!!closingCheckId}
                                   className="cursor-pointer"
+                                  aria-label={closingCheckId === check.id ? 'Closing health check' : 'Close health check'}
+                                  title={closingCheckId === check.id ? 'Closing health check' : 'Close health check'}
                                 >
                                   {closingCheckId === check.id ? (
                                       <ArrowsClockwiseIcon size={16} weight="bold" className="animate-spin" />
@@ -652,9 +675,11 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                             <TooltipTrigger asChild>
                               <Button
                                 variant="outline"
-                                size="sm"
+                                size="icon"
                                 onClick={(e) => handleViewCheck(check.id, e)}
                                 className="cursor-pointer"
+                                aria-label="View results"
+                                title="View results"
                               >
                                   <EyeIcon size={16} weight="bold" />
                               </Button>
@@ -666,10 +691,12 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="outline"
-                                  size="sm"
+                                  size="icon"
                                   onClick={(e) => { e.stopPropagation(); setDeletingCheckId(check.id) }}
                                   disabled={isDeletingCheck}
                                   className="cursor-pointer text-destructive hover:text-destructive"
+                                  aria-label="Delete health check"
+                                  title="Delete health check"
                                 >
                                   <TrashIcon size={16} weight="bold" />
                                 </Button>
@@ -685,9 +712,15 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
               </div>
             )}
                   <div className="flex justify-end">
-                    <Button className="cursor-pointer" disabled={isSubmitting} onClick={() => setIsCreatingCheck(true)}>
-                      <PlusIcon weight="bold" className="mr-2" />
-                      New Check
+                    <Button
+                      className="cursor-pointer"
+                      size="icon"
+                      disabled={isSubmitting}
+                      onClick={() => setIsCreatingCheck(true)}
+                      aria-label="Create new health check"
+                      title="Create new health check"
+                    >
+                      <PlusIcon weight="bold" />
                     </Button>
                   </div>
                 </CardContent>
@@ -733,11 +766,13 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
                     />
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
                       onClick={() => {
                         setCheckQuestions(checkQuestions.filter((_, i) => i !== index))
                       }}
                       className="cursor-pointer"
+                      aria-label={`Remove question ${index + 1}`}
+                      title={`Remove question ${index + 1}`}
                     >
                       <TrashIcon size={16} />
                     </Button>
@@ -774,18 +809,28 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
               ))}
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => setCheckQuestions([...checkQuestions, { text: '' }])}
                 className="cursor-pointer"
+                aria-label="Add question"
+                title="Add question"
               >
-                <PlusIcon size={16} className="mr-2" />
-                Add Question
+                <PlusIcon size={16} />
               </Button>
             </div>
 
-            <Button onClick={handleCreateHealthCheck} disabled={isSubmitting} className="w-full cursor-pointer">
-              {isSubmitting ? 'Creating…' : 'Create Health Check'}
-            </Button>
+            <div className="flex justify-center">
+              <Button
+                onClick={handleCreateHealthCheck}
+                disabled={isSubmitting}
+                size="icon"
+                className="cursor-pointer"
+                aria-label={isSubmitting ? 'Creating health check' : 'Create health check'}
+                title={isSubmitting ? 'Creating health check' : 'Create health check'}
+              >
+                {isSubmitting ? <ArrowsClockwiseIcon size={16} className="animate-spin" /> : <CheckIcon size={16} weight="bold" />}
+              </Button>
+            </div>
           </div>
         </DialogContent>
 
@@ -812,13 +857,21 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeletingCheck}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel
+            disabled={isDeletingCheck}
+            aria-label="Cancel"
+            title="Cancel"
+          >
+            <XIcon size={16} weight="bold" />
+          </AlertDialogCancel>
           <AlertDialogAction
             disabled={isDeletingCheck}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            aria-label={isDeletingCheck ? 'Deleting health check' : 'Delete health check'}
+            title={isDeletingCheck ? 'Deleting health check' : 'Delete health check'}
             onClick={() => { if (deletingCheckId) void handleDeleteCheck(deletingCheckId) }}
           >
-            {isDeletingCheck ? 'Deleting…' : 'Delete'}
+            {isDeletingCheck ? <ArrowsClockwiseIcon size={16} className="animate-spin" /> : <TrashIcon size={16} weight="bold" />}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -840,13 +893,21 @@ export function TeamDetailsView({ team, healthChecks, session, onBack, onRefresh
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeletingTeam}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel
+            disabled={isDeletingTeam}
+            aria-label="Cancel"
+            title="Cancel"
+          >
+            <XIcon size={16} weight="bold" />
+          </AlertDialogCancel>
           <AlertDialogAction
             disabled={isDeletingTeam}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            aria-label={isDeletingTeam ? 'Deleting team' : 'Delete team'}
+            title={isDeletingTeam ? 'Deleting team' : 'Delete team'}
             onClick={() => { void handleDeleteTeam() }}
           >
-            {isDeletingTeam ? 'Deleting…' : 'Delete Team'}
+            {isDeletingTeam ? <ArrowsClockwiseIcon size={16} className="animate-spin" /> : <TrashIcon size={16} weight="bold" />}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeftIcon, HeartIcon, ArrowsClockwiseIcon, CheckCircleIcon, PaperPlaneRightIcon, ListIcon } from '@phosphor-icons/react'
+import { ArrowLeftIcon, HeartIcon, ArrowsClockwiseIcon, CheckCircleIcon, PaperPlaneRightIcon, ClockClockwiseIcon, ListIcon } from '@phosphor-icons/react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { getResultsWithTrends } from '@/lib/healthCheckUtils'
@@ -86,9 +86,15 @@ export function ParticipantResultsView({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-start gap-3 sm:gap-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onBackToTeam} className="cursor-pointer shrink-0">
-                <ArrowLeftIcon weight="bold" className="mr-2" />
-                <span className="hidden sm:inline">Back to Team Overview</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onBackToTeam}
+                className="cursor-pointer shrink-0"
+                aria-label="Back to team overview"
+                title="Back to team overview"
+              >
+                <ArrowLeftIcon weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Return to team overview</TooltipContent>
@@ -108,12 +114,13 @@ export function ParticipantResultsView({
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={onGoToVoting}
                     className="cursor-pointer"
+                    aria-label="Go to voting"
+                    title="Go to voting"
                   >
-                    <PaperPlaneRightIcon size={16} weight="bold" className="mr-2" />
-                    Go to Voting
+                    <PaperPlaneRightIcon size={16} weight="bold" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Submit your feedback</TooltipContent>
@@ -123,16 +130,17 @@ export function ParticipantResultsView({
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setAutoRefreshEnabled((enabled) => !enabled)}
                   className="cursor-pointer"
+                  aria-label={autoRefreshEnabled ? 'Disable automatic refresh' : 'Enable automatic refresh'}
+                  title={autoRefreshEnabled ? 'Disable automatic refresh' : 'Enable automatic refresh'}
                 >
-                  <ArrowsClockwiseIcon
+                  <ClockClockwiseIcon
                     size={16}
                     weight="bold"
-                    className={`mr-2 ${autoRefreshEnabled ? 'text-primary' : ''}`}
+                    className={autoRefreshEnabled ? 'text-primary' : ''}
                   />
-                  {autoRefreshEnabled ? 'Auto On' : 'Auto Off'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -143,17 +151,18 @@ export function ParticipantResultsView({
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   className="cursor-pointer"
+                  aria-label="Refresh data"
+                  title="Refresh data"
                 >
                   <ArrowsClockwiseIcon
                     size={16}
                     weight="bold"
-                    className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`}
+                    className={isRefreshing ? 'animate-spin' : ''}
                   />
-                  Refresh
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Refresh data</TooltipContent>
@@ -180,6 +189,8 @@ export function ParticipantResultsView({
                         onGoToVoting()
                       }}
                       className="w-full justify-start rounded-lg cursor-pointer"
+                      aria-label="Go to voting"
+                      title="Go to voting"
                     >
                       <PaperPlaneRightIcon size={16} weight="bold" className="mr-2" />
                       Go to Voting
@@ -192,8 +203,10 @@ export function ParticipantResultsView({
                       setAutoRefreshEnabled((enabled) => !enabled)
                     }}
                     className="w-full justify-start rounded-lg cursor-pointer"
+                    aria-label={autoRefreshEnabled ? 'Disable automatic refresh' : 'Enable automatic refresh'}
+                    title={autoRefreshEnabled ? 'Disable automatic refresh' : 'Enable automatic refresh'}
                   >
-                    <ArrowsClockwiseIcon size={16} weight="bold" className={`mr-2 ${autoRefreshEnabled ? 'text-primary' : ''}`} />
+                    <ClockClockwiseIcon size={16} weight="bold" className={`mr-2 ${autoRefreshEnabled ? 'text-primary' : ''}`} />
                     {autoRefreshEnabled ? 'Auto Refresh On' : 'Auto Refresh Off'}
                   </Button>
                   <Button
@@ -204,6 +217,8 @@ export function ParticipantResultsView({
                     }}
                     disabled={isRefreshing}
                     className="w-full justify-start rounded-lg cursor-pointer"
+                    aria-label="Refresh data"
+                    title="Refresh data"
                   >
                     <ArrowsClockwiseIcon size={16} weight="bold" className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                     Refresh
@@ -313,11 +328,12 @@ export function ParticipantResultsView({
               {healthCheck.status !== 'closed' && onGoToVoting && (
                 <Button
                   onClick={onGoToVoting}
-                  size="lg"
+                  size="icon"
                   className="cursor-pointer"
+                  aria-label="Go to voting"
+                  title="Go to voting"
                 >
-                  <PaperPlaneRightIcon size={20} weight="bold" className="mr-2" />
-                  Go to Voting
+                  <PaperPlaneRightIcon size={20} weight="bold" />
                 </Button>
               )}
             </CardContent>
