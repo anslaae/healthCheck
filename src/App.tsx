@@ -20,6 +20,7 @@ import { useAuthSession } from './hooks/useAuthSession'
 import { Checkbox } from './components/ui/checkbox'
 import { Label } from './components/ui/label'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion'
+import { PrivateAccessPrompt } from './components/PrivateAccessPrompt'
 
 const PUBLIC_TEAMS_EXPANDED_STORAGE_KEY = 'healthcheck:publicTeamsExpanded'
 
@@ -66,7 +67,8 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (inviteHandled || !inviteCode || isAuthLoading) {
+    // Never validate or consume invite codes until the user is authenticated.
+    if (inviteHandled || !inviteCode || isAuthLoading || !session.authenticated) {
       return
     }
 
@@ -74,13 +76,6 @@ function App() {
     setInviteHandled(true)
 
     const handleInviteJoin = async () => {
-      if (!session.authenticated) {
-        toast.error('Please sign in before joining a private team invite')
-        clearInviteFromUrl()
-        setIsJoiningInvite(false)
-        return
-      }
-
       try {
         const result = await joinPrivateTeamByInvite(inviteCode)
         if (result.alreadyMember) {
@@ -98,7 +93,7 @@ function App() {
     }
 
     void handleInviteJoin()
-  }, [inviteCode, inviteHandled, isAuthLoading, session])
+  }, [inviteCode, inviteHandled, isAuthLoading, session.authenticated])
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -246,129 +241,179 @@ function App() {
     </div>
   )
 
-  if (inviteCode && (isAuthLoading || isJoiningInvite || !inviteHandled)) {
-    return (
-      <>
-        <PageStatusCard
-          loading
-          title="Opening invite…"
-          description="Checking your access and joining the private team."
-        />
-        <Toaster />
-      </>
-    )
-  }
-  
-  if (teamId) {
-    // Still loading — don't flash "not found" before data arrives
-    if (isLoading) {
-      return (
-        <>
-          <PageStatusCard
-            loading
-            title="Looking for team…"
-            description="Fetching team data, please wait."
-          />
-          <Toaster />
-        </>
-      )
-    }
+   if (inviteCode) {
+     // Show login prompt if not authenticated and auth check is complete
+     if (!isAuthLoading && !session.authenticated) {
+       const returnUrl = window.location.pathname + window.location.search
+       return (
+         <PrivateAccessPrompt
+           title="Join Private Team"
+           description="Sign in to accept this private team invitation."
+           returnUrl={returnUrl}
+         />
+       )
+     }
 
-    const team = teams.find((t) => t.id === teamId)
-    
-    if (!team) {
+     if (isAuthLoading || isJoiningInvite || !inviteHandled) {
        return (
          <>
            <PageStatusCard
-             icon={<AlertTriangle size={24} className="text-primary" />}
-             title="Team Not Found"
-             description="The team you're looking for doesn't exist or has been removed."
-             action={{ label: 'Go to Home', onClick: () => { window.location.href = '/' } }}
+             loading
+             title="Opening invite…"
+             description="Checking your access and joining the private team."
            />
            <Toaster />
          </>
        )
-    }
-    
-    const teamHealthChecks = healthChecks.filter(c => c.teamId === team.id)
-    
-    return (
-      <>
-        <TeamDetailsView
-          team={team}
-          healthChecks={teamHealthChecks}
-          session={session}
-          onBack={() => window.location.href = '/'}
-          onRefresh={handleRefresh}
-        />
-        <Toaster />
-      </>
-    )
-  }
-  
-  if (checkId) {
-    const healthCheck = healthChecks.find((c) => c.id === checkId)
+     }
+   }
 
-    if (!healthCheck && isLoading) {
-      return (
-        <>
-          <PageStatusCard
-            loading
-            title="Loading health check…"
-            description="Fetching health check data, please wait."
-          />
-          <Toaster />
-        </>
-      )
-    }
-    
-    if (!healthCheck) {
+   if (teamId) {
+     // Still loading — don't flash "not found" before data arrives
+     if (isLoading) {
        return (
          <>
            <PageStatusCard
-             icon={<AlertTriangle size={24} className="text-primary" />}
-             title="Health Check Not Found"
-             description="The health check you're looking for doesn't exist or has been removed."
-             action={{ label: 'Go to Home', onClick: () => { window.location.href = '/' } }}
-           />
-           <Toaster />
-         </>
-       )
-    }
-    
-    const teamHealthChecks = healthChecks.filter(c => c.teamId === healthCheck.teamId)
-    
-     if (healthCheck.status === 'closed' || forceResults) {
-       return (
-         <>
-           <ParticipantResultsView
-             healthCheck={healthCheck}
-             allHealthChecks={teamHealthChecks}
-             onRefresh={handleRefresh}
-             onBackgroundRefresh={handleBackgroundRefresh}
-             onBackToTeam={() => handleBackToTeamFromCheck(healthCheck.teamId)}
-             onGoToVoting={() => window.location.href = `${window.location.origin}?check=${healthCheck.id}`}
+             loading
+             title="Looking for team…"
+             description="Fetching team data, please wait."
            />
            <Toaster />
          </>
        )
      }
 
-    return (
-      <>
-        <VotingView 
-          healthCheck={healthCheck} 
-          allHealthChecks={teamHealthChecks}
-          onVoteSubmit={handleVoteSubmit}
-          onRefresh={handleRefresh}
-          onBackgroundRefresh={handleBackgroundRefresh}
-          onBackToTeam={() => handleBackToTeamFromCheck(healthCheck.teamId)}
-        />
-        <Toaster />
-      </>
-    )
-  }
-  
+     const publicTeam = teams.find((t) => t.id === teamId && t.visibility === 'public')
+
+     // For logged-out users, only allow known public teams.
+     // If no public match exists, prompt login first without revealing existence.
+     if (!session.authenticated && !isAuthLoading && !publicTeam) {
+       const returnUrl = window.location.pathname + window.location.search
+       return (
+         <PrivateAccessPrompt
+           title="Private Team"
+           description="Sign in to view this private team."
+           returnUrl={returnUrl}
+         />
+       )
+     }
+
+     const team = publicTeam ?? teams.find((t) => t.id === teamId)
+
+     if (!team) {
+        return (
+          <>
+            <PageStatusCard
+              icon={<AlertTriangle size={24} className="text-primary" />}
+              title="Team Not Found"
+              description="The team you're looking for doesn't exist or has been removed."
+              action={{ label: 'Go to Home', onClick: () => { window.location.href = '/' } }}
+            />
+            <Toaster />
+          </>
+        )
+     }
+
+     const teamHealthChecks = healthChecks.filter(c => c.teamId === team.id)
+
+     return (
+       <>
+         <TeamDetailsView
+           team={team}
+           healthChecks={teamHealthChecks}
+           session={session}
+           onBack={() => window.location.href = '/'}
+           onRefresh={handleRefresh}
+         />
+         <Toaster />
+       </>
+     )
+   }
+
+   if (checkId) {
+     const publicHealthCheck = healthChecks.find((candidate) => {
+       if (candidate.id !== checkId) {
+         return false
+       }
+
+       const ownerTeam = teams.find((team) => team.id === candidate.teamId)
+       return ownerTeam?.visibility === 'public'
+     })
+     const healthCheck = publicHealthCheck ?? healthChecks.find((c) => c.id === checkId)
+
+     if (!healthCheck && isLoading) {
+       return (
+         <>
+           <PageStatusCard
+             loading
+             title="Loading health check…"
+             description="Fetching health check data, please wait."
+           />
+           <Toaster />
+         </>
+       )
+     }
+
+     // For logged-out users, only allow checks belonging to public teams.
+     // If no public match exists, prompt login first without revealing existence.
+     if (!session.authenticated && !isAuthLoading && !publicHealthCheck) {
+       const returnUrl = window.location.pathname + window.location.search
+       return (
+         <PrivateAccessPrompt
+           title="Private Health Check"
+           description="Sign in to view this health check from a private team."
+           returnUrl={returnUrl}
+         />
+       )
+     }
+
+     if (!healthCheck) {
+        return (
+          <>
+            <PageStatusCard
+              icon={<AlertTriangle size={24} className="text-primary" />}
+              title="Health Check Not Found"
+              description="The health check you're looking for doesn't exist or has been removed."
+              action={{ label: 'Go to Home', onClick: () => { window.location.href = '/' } }}
+            />
+            <Toaster />
+          </>
+        )
+     }
+
+     const teamHealthChecks = healthChecks.filter(c => c.teamId === healthCheck.teamId)
+
+      if (healthCheck.status === 'closed' || forceResults) {
+        return (
+          <>
+            <ParticipantResultsView
+              healthCheck={healthCheck}
+              allHealthChecks={teamHealthChecks}
+              onRefresh={handleRefresh}
+              onBackgroundRefresh={handleBackgroundRefresh}
+              onBackToTeam={() => handleBackToTeamFromCheck(healthCheck.teamId)}
+              onGoToVoting={() => window.location.href = `${window.location.origin}?check=${healthCheck.id}`}
+            />
+            <Toaster />
+          </>
+        )
+      }
+
+     return (
+       <>
+         <VotingView
+           healthCheck={healthCheck}
+           allHealthChecks={teamHealthChecks}
+           onVoteSubmit={handleVoteSubmit}
+           onRefresh={handleRefresh}
+           onBackgroundRefresh={handleBackgroundRefresh}
+           onBackToTeam={() => handleBackToTeamFromCheck(healthCheck.teamId)}
+         />
+         <Toaster />
+       </>
+     )
+   }
+
   return (
     <>
       <div className="min-h-screen bg-background">
